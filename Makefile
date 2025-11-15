@@ -29,6 +29,7 @@ P_INC = inc/
 # Headers
 INC = \
 	Debug.hpp \
+	ACommand.hpp \
 	utils.hpp
 
 # Source files
