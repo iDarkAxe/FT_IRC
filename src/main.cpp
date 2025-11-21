@@ -9,9 +9,9 @@ int main(int argc, char** argv)
 {
 	std::string command_type;
 	std::vector<std::string> params;
-	command_type = "JOIN";
-	params.push_back("#general");
+	command_type = "INVITE";
 	params.push_back("user1");
+	params.push_back("user2");
 	ACommand *command = CommandFactory::createCommand(command_type, params);
 	if (command)
 	{

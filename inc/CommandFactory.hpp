@@ -10,6 +10,7 @@ private:
 
 //= Methods =//
 public:
+	CommandFactory();
 	~CommandFactory();
 	CommandFactory &getInstance();
 	static command_type findType(std::string const &command_name);

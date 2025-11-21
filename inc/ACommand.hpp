@@ -10,9 +10,9 @@ enum command_type
 	KICK,
 	CHANGE_TOPIC,
 	MODE,
-	SET_NICK,
-	SET_USERNAME,
-	AUTHENTICATE,
+	NICK,
+	USER,
+	PASS,
 	JOIN,
 	LEAVE,
 	SEND_MESSAGE,
@@ -39,6 +39,14 @@ protected:
 public:
 	virtual ~ACommand() {};
 	virtual void execute() = 0;
+	virtual void print_params() const
+	{
+		std::cout << "Command parameters:" << std::endl;
+		for (size_t i = 0; i < _params.size(); ++i)
+		{
+			std::cout << "Param " << i << ": " << _params[i] << std::endl;
+		}
+	}
 };
 
 #endif

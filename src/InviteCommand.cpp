@@ -8,10 +8,6 @@ InviteCommand::InviteCommand(std::vector<std::string> params)
 
 void InviteCommand::execute()
 {
-	std::cout << "Executing INVITE command with parameters:" << std::endl;
-	for (size_t i = 0; i < _params.size(); ++i)
-	{
-		std::cout << "Param " << i << ": " << _params[i] << std::endl;
-	}
+	this->print_params();
 	// Implementation of the invite command execution
 }
