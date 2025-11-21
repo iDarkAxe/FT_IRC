@@ -30,12 +30,16 @@ P_INC = inc/
 INC = \
 	Debug.hpp \
 	ACommand.hpp \
+	CommandFactory.hpp \
+	InviteCommand.hpp \
 	utils.hpp
 
 # Source files
 SRC = \
 	main.cpp \
 	Debug.cpp \
+	CommandFactory.cpp \
+	InviteCommand.cpp \
 	utils.cpp \
 
 LIBS = \

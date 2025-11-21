@@ -19,6 +19,7 @@ enum command_type
 	PRIVATE_MESSAGE,
 	LIST_CHANNELS,
 	LIST_USERS,
+	UNKNOWN,
 };
 
 enum param_type
@@ -32,7 +33,6 @@ class ACommand
 {
 //= Variables =//
 protected:
-	std::string _name;
 	std::vector<std::string> _params;
 
 //= Methods =//
