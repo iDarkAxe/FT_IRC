@@ -33,7 +33,7 @@ class ACommand
 {
 //= Variables =//
 protected:
-	std::vector<std::string> _params;
+	std::vector<std::string> _params; //!< Parameters for the command
 
 //= Methods =//
 public:
