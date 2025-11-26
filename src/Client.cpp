@@ -42,6 +42,11 @@ void Client::setLocalClient(LocalUser *localClient)
    this->isLocal = true;
 }
 
+LocalUser* Client::getLocalClient()
+{
+   return &this->localClient;
+}
+
 void Client::setNickname(const std::string &nickname)
 {
    this->nickname = nickname;

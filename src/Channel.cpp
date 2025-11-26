@@ -77,7 +77,7 @@ bool Channel::addClient(Client *client, bool is_operator)
 	if (is_operator)
 	{
 		operators.insert(client);
-		this->operators_realnames.push_back(client->realname);
+		this->operators_realnames.push_back(client->getRealname());
 	}
 	return true;
 }
