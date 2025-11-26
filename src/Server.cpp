@@ -222,6 +222,11 @@ int Server::read_client_fd(int fd, std::map<int, Client>& clients)
         clients[fd].rbuf.append(buf, buf + r); // &buf[r]
         // std::cout << "Received " << r << " bytes from fd " << fd << std::endl;
         
+        // 512 max
+        //  - on execute ce qu'on peut
+        //  - on jette le reste : on clean, et on relit pas un truc qu'on veut pas lire
+
+
         size_t pos;
         while ((pos = clients[fd].rbuf.find("\r\n")) != std::string::npos) {
             std::string line = clients[fd].rbuf.substr(0, pos);
