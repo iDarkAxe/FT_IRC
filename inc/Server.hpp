@@ -41,7 +41,7 @@ private:
 	int _server_socket;
 	int _epfd;
 	NetworkState *_networkState;
-	int welcomed;
+	// int welcomed;
 
 	Server(); // On ne veut pas de serveur sans mdp ni sans port
 public:
@@ -60,10 +60,11 @@ public:
 	void send_welcome(int fd);
 	void remove_inactive_localUsers();
 	void check_localUsers_ping();
-	ACommand* parse_command(int fd);
+	ACommand* parse_command(std::string line);
 	std::string get_command(std::string line);
 	std::vector<std::string> get_params(std::string line);
 	static std::string& getPassword();
+	static void kick(Client* client);
 
 	Server(int port, std::string password);
 	~Server();

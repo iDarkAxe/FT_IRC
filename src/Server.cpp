@@ -28,7 +28,7 @@ Server::~Server() {}
 
 Server::Server(int port, std::string password) :  _port(port) 
 {
-    welcomed = 0;
+    // welcomed = 0;
     _password = password;
 }
 
@@ -187,8 +187,8 @@ void Server::send_welcome(int fd)
     this->_localUsers[fd].wbuf += ss.str();
     this->enable_epollout(fd);
     this->write_client_fd(fd);
-    this->welcomed += 1;
-    std::cout << "welcomed = " << this->welcomed << std::endl;
+    // this->welcomed += 1;
+    // std::cout << "welcomed = " << this->welcomed << std::endl;
 }
 
 void Server::remove_inactive_localUsers()
@@ -247,55 +247,49 @@ std::string Server::get_command(std::string line)
 std::vector<std::string> Server::get_params(std::string line)
 {
     std::vector<std::string> params;
+    std::string last_param;
     
-    size_t pos = line.find(' ');
-    
-    if (pos == std::string::npos) {
-        return params;
+    size_t pos = line.find(":");
+    if (pos != std::string::npos) {
+        last_param = line.substr(pos + 1);
     }
-
-    std::string remaining = line.substr(pos + 1);
     
-    size_t start = 0;
-    while (start < remaining.length()) {
-        while (start < remaining.length() && remaining[start] == ' ') {
-            start++;
-        }
-        
-        if (start >= remaining.length()) {
-            break;
-        }
-        
-        size_t end = remaining.find(' ', start);
+    std::stringstream ss(line);
+    std::string t;
+  
+    char del = ' ';
 
-        
-        if (end == std::string::npos) {
-            // std::cout << "param found : " << remaining.substr(start) << std::endl;
-            params.push_back(remaining.substr(start));
+    while (getline(ss, t, del))
+    {
+        if (t.find(':') != std::string::npos)
             break;
-        } else {
-            if (remaining.substr(start, end - start).find(":")) // pour USER, mais le check est pas suffisant
-                break;
-            // std::cout << "param found : " << remaining.substr(start, end - start) << std::endl;
-            params.push_back(remaining.substr(start, end - start));
-            start = end + 1;
-        }
+        params.push_back(t);
     }
+    if (!last_param.empty())
+        params.push_back(last_param);
+
+    // for (std::vector<std::string>::iterator it = params.begin(); it != params.end(); ++it)
+    // {
+    //     std::cout << *it << std::endl;
+    // }
+
     return params;
 }
+
+// void Server::kick(Client* client)
+// {
+//     //envoyer un message ici ?
+//     close(client->_localClient->fd);
+//     _localUsers.erase(client->_localClient->fd);
+// }
 
 std::string& Server::getPassword()
 {
     return _password;
 }
 
-ACommand* Server::parse_command(int fd)
+ACommand* Server::parse_command(std::string line)
 {
-    size_t pos;
-    while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) {
-        std::string line = this->_localUsers[fd].rbuf.substr(0, pos);
-        this->_localUsers[fd].rbuf.erase(0, pos + 2);
-        
         std::cout << "Processing: [" << line << "]" << std::endl;
 
         std::string cmd = this->get_command(line);
@@ -305,26 +299,23 @@ ACommand* Server::parse_command(int fd)
         std::vector<std::string> params = this->get_params(line);
         return CommandFactory::createCommand(cmd, params);
 
-        if (line.rfind("PONG", 0) == 0) {
-            pong_command(line, fd, this->_localUsers);
-        }
-        else if (line.rfind("PASS", 0) == 0) {
-            pass_command(line, fd, this->_localUsers, this->_password);
-        }
-        else if (line.rfind("NICK", 0) == 0) {
-            nick_command(line, fd, this->_localUsers);
-        }
-        else if (line.rfind("USER", 0) == 0) {
-            user_command(line, fd, this->_localUsers);    
-        }
-        else {
-            std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
-        }
-
-    }
-
-    return NULL;
+        // if (line.rfind("PONG", 0) == 0) {
+        //     pong_command(line, fd, this->_localUsers);
+        // }
+        // else if (line.rfind("PASS", 0) == 0) {
+        //     pass_command(line, fd, this->_localUsers, this->_password);
+        // }
+        // else if (line.rfind("NICK", 0) == 0) {
+        //     nick_command(line, fd, this->_localUsers);
+        // }
+        // else if (line.rfind("USER", 0) == 0) {
+        //     user_command(line, fd, this->_localUsers);    
+        // }
+        // else {
+        //     std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
+        // }
 }
+
 
 //returns 1 to send a buff in parsing
 //returns 2 to wait more data in case of EAGAIN / EWOULDBLOCK
@@ -402,16 +393,19 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
                 // 0 = client disconnected
                 if (result == 0) {
                     continue;
-                } else if (result == 1 ){
-                    ACommand* cmd = this->parse_command(fd);
-                    if (cmd)
-                    {
+                } else if (result == 1 ) {
+                    size_t pos;
+                    while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) {
+                        std::string line = this->_localUsers[fd].rbuf.substr(0, pos);
+                        this->_localUsers[fd].rbuf.erase(0, pos + 2);
+                        ACommand* cmd = this->parse_command(line);      
+                        //try catch ?
                         cmd->execute(this->_localUsers[fd].client, *this->_networkState);
-                        delete cmd;
                     }
 
                     this->_localUsers[fd].last_ping = std::time(NULL);
 
+                    // std::cout << "Username = " << this->_localUsers[fd].client->getUsername() << std::endl;
                     if (!this->_localUsers[fd].client->_registered && 
                         this->_localUsers[fd].client->_password_correct == true && 
                         this->_localUsers[fd].client->getNickname() != "" && 
