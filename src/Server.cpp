@@ -291,21 +291,21 @@ ACommand* Server::parse_command(int fd)
         std::vector<std::string> params = this->get_params(line);
         // return CommandFactory(cmd, params);
 
-        if (line.rfind("PONG", 0) == 0) {
-            pong_command(line, fd, this->_localUsers);
-        }
-        else if (line.rfind("PASS", 0) == 0) {
-            pass_command(line, fd, this->_localUsers, this->_password);
-        }
-        else if (line.rfind("NICK", 0) == 0) {
-            nick_command(line, fd, this->_localUsers);
-        }
-        else if (line.rfind("USER", 0) == 0) {
-            user_command(line, fd, this->_localUsers);    
-        }
-        else {
-            std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
-        }
+        // if (line.rfind("PONG", 0) == 0) {
+        //     pong_command(line, fd, this->_localUsers);
+        // }
+        // else if (line.rfind("PASS", 0) == 0) {
+        //     pass_command(line, fd, this->_localUsers, this->_password);
+        // }
+        // else if (line.rfind("NICK", 0) == 0) {
+        //     nick_command(line, fd, this->_localUsers);
+        // }
+        // else if (line.rfind("USER", 0) == 0) {
+        //     user_command(line, fd, this->_localUsers);    
+        // }
+        // else {
+        //     std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
+        // }
 
         this->_localUsers[fd].last_ping = std::time(NULL);
 

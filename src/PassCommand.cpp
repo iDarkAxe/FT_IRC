@@ -12,57 +12,14 @@ void PassCommand::execute(Client* executor, NetworkState& network)
 		// ERR_NEEDMOREPARAMS
 		return;
 	}
+
+  if (executor.password_correct)
+    return; // si il a deja renseigne un mot de passe correct
+
 	Client* password = network.getClient(_params[0]);
-    if (!target || !channel) {
-		// ERR_NOSUCHNICK
-		Debug::print(DEBUG, "Invalid params");
-        // executor.sendError("Invalid params");
-        return;
-    }
-	if (!channel->isClientInChannel(executor))
+	if (password != server.getPassword())
 	{
-		// ERR_NOTONCHANNEL
-		Debug::print(DEBUG, "Client is not in channel");
-		// executor.sendError("Client is not in channel");
-		return;
+	  executor.password_correct = true;
 	}
-	if (channel->isClientInChannel(target))
-	{
-		// ERR_USERONCHANNEL
-		Debug::print(DEBUG, "Target user is already in channel");
-		// executor.sendError("Target user is already in channel");
-		return;
-	}
-	if (channel->getModes().is_invite_only)
-	{
-		if (channel->isClientOPChannel(executor))
-		{
-			if (!target)
-			{
-				// RPL_AWAY
-				return;
-			}
-			// RPL_INVITING
-			channel->addClient(target);
-			return;
-		}
-		else
-		{
-			// ERR_CHANOPRIVSNEEDED
-			Debug::print(DEBUG, "Client is not channel operator");
-			// executor.sendError("Client is not channel operator");
-			return;
-		}
-	}
-	else // Not invite only
-	{
-		if (!target)
-		{
-			// RPL_AWAY
-			return;
-		}
-		// RPL_INVITING
-		channel->addClient(target);
-		return;
-	}
+	return;
 }
