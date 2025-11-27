@@ -15,4 +15,4 @@ public:
 	void execute(Client* executor, NetworkState& network);
 };
 
-#endif
+#endif  // INVITECOMMAND_HPP

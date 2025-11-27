@@ -69,4 +69,4 @@ public:
 	bool noticeServers(NetworkState&, std::string message);
 };
 
-#endif 
+#endif	// SERVER_HPP

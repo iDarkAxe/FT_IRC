@@ -52,4 +52,4 @@ public:
 	}
 };
 
-#endif
+#endif  // ACOMMAND_HPP

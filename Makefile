@@ -39,6 +39,10 @@ INC = \
 	NetworkState.hpp \
 	Channel.hpp \
 
+# Template implementation  files
+TPP = \
+	Debug.tpp \
+
 # Source files
 SRC = \
 	main.cpp \
@@ -70,7 +74,9 @@ DEPS = $(OBJS:%.o=%.d)
 
 # List of header files
 INCS = \
-	$(addprefix $(P_INC), $(INC))
+	$(addprefix $(P_INC), $(INC)) \
+
+# 	$(addprefix $(P_INC), $(TPP))
 
 #############################################################################################
 #                                                                                           #
