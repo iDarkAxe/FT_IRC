@@ -1,12 +1,12 @@
 #include "Client.hpp"
 #include <cstring>
 
-Client::Client()
+Client::Client() : _localClient(0)
 {
 	this->clear();
 }
 
-Client::Client(int fd)
+Client::Client(int fd) : _localClient(0)
 {
 	this->clear();
 	this->_localClient = new LocalUser;
@@ -14,7 +14,7 @@ Client::Client(int fd)
 	this->_isLocal = true;
 }
 
-Client::Client(LocalUser *localClient)
+Client::Client(LocalUser *localClient) : _localClient(0)
 {
 	this->clear();
 	this->_localClient = localClient;

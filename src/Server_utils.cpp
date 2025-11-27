@@ -17,7 +17,7 @@
 
 int init_epoll(int server_fd)
 {
-	int epfd = epoll_create(64);
+	int epfd = epoll_create(MAX_EVENTS);
 	if (epfd < 0) {
 		perror("epoll_create");
 		close(server_fd);

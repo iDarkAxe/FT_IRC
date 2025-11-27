@@ -7,10 +7,10 @@
  * @brief Print a debug message with a specific level
  * 
  * @param[in] level debug level
- * @param[in] content content to print
+ * @param[in] message message to print
  */
 template<typename T>
-void Debug::print(debug_level level, const T& content)
+void Debug::print(debug_level level, const T& message)
 {
 	switch (level)
 	{
@@ -33,9 +33,9 @@ void Debug::print(debug_level level, const T& content)
 	}
 	
 	if (level == ERROR)
-		*errStream << content << std::endl;
+		*errStream << message << std::endl;
 	else
-		*stream << content << std::endl;
+		*stream << message << std::endl;
 }
 
 /**
@@ -45,7 +45,7 @@ void Debug::print(debug_level level, const T& content)
  * @param[in] message message to print
  */
 template<typename T>
-void Debug::printSTD(debug_level level, const T& content)
+void Debug::printSTD(debug_level level, const T& message)
 {
 	switch (level)
 	{
@@ -67,9 +67,9 @@ void Debug::printSTD(debug_level level, const T& content)
 			break;
 	}
 	if (level == ERROR)
-		std::cerr << content << std::endl;
+		std::cerr << message << std::endl;
 	else
-		std::cout << content << std::endl;
+		std::cout << message << std::endl;
 }
 
 #endif // DEBUG_TPP

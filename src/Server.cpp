@@ -54,7 +54,7 @@ int Server::init_socket(int port) {
 
 	sin.sin_port = htons(static_cast<uint16_t>(port));
 
-	if (bind(this->_server_socket, (sockaddr*)&sin, sizeof(sin)) < 0) {
+	if (bind(this->_server_socket, reinterpret_cast<const sockaddr*>(&sin), sizeof(sin)) < 0) {
 		perror("bind");
 		close(this->_server_socket);
 		return -1;
@@ -401,7 +401,7 @@ bool Server::reply(Client* client, std::string message)
 		}
 		else {
 			// error or client disconnected
-			Debug::print(ERROR, "Send error on fd " + client->getLocalClient()->fd);
+			std::cerr << "[ERROR] Send error on fd " << client->getLocalClient()->fd << "\n";
 			epoll_ctl(this->_epfd, EPOLL_CTL_DEL, client->getLocalClient()->fd, NULL);
 			this->_networkState->removeClient(client->getNickname());
 			close(client->getLocalClient()->fd);
