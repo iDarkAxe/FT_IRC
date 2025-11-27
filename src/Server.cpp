@@ -111,12 +111,7 @@ int Server::write_client_fd(int fd)
             return -1;
         }
     }
-
-    epoll_event ev;
-    ev.events = EPOLLIN | EPOLLRDHUP; 
-    ev.data.fd = fd;
-    epoll_ctl(this->_epfd, EPOLL_CTL_MOD, fd, &ev);
-
+    this->disable_epollout(fd);
     return 0;
 }
 
@@ -317,13 +312,13 @@ ACommand* Server::parse_command(int fd)
 
         this->_localUsers[fd].last_ping = std::time(NULL);
 
-        if (!this->_localUsers[fd].client->registered && 
-            this->_localUsers[fd].client->password_correct == true && 
+        if (!this->_localUsers[fd].client->_registered && 
+            this->_localUsers[fd].client->_password_correct == true && 
             this->_localUsers[fd].client->getNickname() != "" && 
             this->_localUsers[fd].client->getUsername() != "") {
             
             this->send_welcome(fd);
-            this->_localUsers[fd].client->registered = true;
+            this->_localUsers[fd].client->_registered = true;
             std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
         }
     }

@@ -52,10 +52,8 @@ class Server {
     int init_socket(int port);
     int read_client_fd(int fd);
     void handle_events(int n, epoll_event events[MAX_EVENTS]);
-    void send_welcome(int fd, int epfd);
-    void remove_inactive_localUsers(int epfd);
-    void check_localUsers_ping(int epfd);
     void enable_epollout(int fd);
+    void disable_epollout(int fd);
     int write_client_fd(int fd);
     void new_client(int server_fd);
     void client_quited(int fd); // leaved plutot que quited
