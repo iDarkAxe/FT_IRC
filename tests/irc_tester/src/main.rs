@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
     //
     // -- parralle --
 
-    // stress_test(6667, 1000, 0).await?;
+    stress_test(6667, 1000, 0).await?;
 
     //- tester 0 -> FD MAX
     //- tester le non bloquant (Bible et normal connection en meme temps)

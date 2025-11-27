@@ -1,5 +1,5 @@
 #include <sys/types.h>
-#include <climits>
+// #include <climits>
 #include <sstream>
 #include <ctime>
 #include <fcntl.h>
@@ -20,6 +20,7 @@
 #include "Server_utils.h"
 #include "Server.hpp"
 #include "ACommand.hpp"
+#include "CommandFactory.hpp"
 
 Server::~Server() {}
 
@@ -91,12 +92,10 @@ int Server::write_client_fd(int fd)
         if (n > 0) {
             wbuf.erase(0, n);
         }
-        //socket buffer full 
         else if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
             return 0;
         }
         else {
-            // error or client disconnected
             std::cerr << "send error on fd " << fd << "\n";
             epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
             close(fd);
@@ -106,7 +105,7 @@ int Server::write_client_fd(int fd)
     }
 
     epoll_event ev;
-    ev.events = EPOLLIN | EPOLLRDHUP;  // remove EPOLLOUT
+    ev.events = EPOLLIN | EPOLLRDHUP; 
     ev.data.fd = fd;
     epoll_ctl(this->_epfd, EPOLL_CTL_MOD, fd, &ev);
 
@@ -227,27 +226,107 @@ void Server::check_localUsers_ping()
     }
 }
 
-// std::string Server::get_command() 
-// {
-//     
-// }
-//
-// std::vector<int> Server::get_params()
-// {
-//
-// }
-//
-// ACommand* Server::parse_command()
-// {
-//     std::string cmd = this->get_command()
-//     if (!cmd)
-//         return 1;
-//     std::vector<int> params = this->get_params()
-//     if (params.empty())
-//         return NULL;
-//     return CommandFactory(cmds, params);
-// }
+std::string Server::get_command(std::string line) 
+{
+    size_t pos = line.find(' ');
+    if (pos == std::string::npos) {
+        return line;
+    }
+    return line.substr(0, pos);
+}
 
+std::vector<std::string> Server::get_params(std::string line)
+{
+    std::vector<std::string> params;
+    
+    size_t pos = line.find(' ');
+    
+    if (pos == std::string::npos) {
+        return params;
+    }
+
+    std::string remaining = line.substr(pos + 1);
+    
+    size_t start = 0;
+    while (start < remaining.length()) {
+        while (start < remaining.length() && remaining[start] == ' ') {
+            start++;
+        }
+        
+        if (start >= remaining.length()) {
+            break;
+        }
+        
+        size_t end = remaining.find(' ', start);
+
+        
+        if (end == std::string::npos) {
+            // std::cout << "param found : " << remaining.substr(start) << std::endl;
+            params.push_back(remaining.substr(start));
+            break;
+        } else {
+            if (remaining.substr(start, end - start).find(":")) // pour USER, mais le check est pas suffisant
+                break;
+            // std::cout << "param found : " << remaining.substr(start, end - start) << std::endl;
+            params.push_back(remaining.substr(start, end - start));
+            start = end + 1;
+        }
+    }
+    return params;
+}
+
+ACommand* Server::parse_command(int fd)
+{
+    size_t pos;
+    while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) {
+        std::string line = this->_localUsers[fd].rbuf.substr(0, pos);
+        this->_localUsers[fd].rbuf.erase(0, pos + 2);
+        
+        std::cout << "Processing: [" << line << "]" << std::endl;
+
+        std::string cmd = this->get_command(line);
+        if (cmd.empty())
+            return NULL;
+        // std::cout << "CMD = " << cmd << std::endl;
+        std::vector<std::string> params = this->get_params(line);
+        // return CommandFactory(cmd, params);
+
+        if (line.rfind("PONG", 0) == 0) {
+            pong_command(line, fd, this->_localUsers);
+        }
+        else if (line.rfind("PASS", 0) == 0) {
+            pass_command(line, fd, this->_localUsers, this->_password);
+        }
+        else if (line.rfind("NICK", 0) == 0) {
+            nick_command(line, fd, this->_localUsers);
+        }
+        else if (line.rfind("USER", 0) == 0) {
+            user_command(line, fd, this->_localUsers);    
+        }
+        else {
+            std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
+        }
+
+        this->_localUsers[fd].last_ping = std::time(NULL);
+
+        if (!this->_localUsers[fd].client->registered && 
+            this->_localUsers[fd].client->password_correct == true && 
+            this->_localUsers[fd].client->getNickname() != "" && 
+            this->_localUsers[fd].client->getUsername() != "") {
+            
+            this->send_welcome(fd);
+            this->_localUsers[fd].client->registered = true;
+            std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
+        }
+    }
+
+    return NULL;
+}
+
+//returns 1 to send a buff in parsing
+//returns 2 to wait more data in case of EAGAIN / EWOULDBLOCK
+//returns 0 in case of client disconnection
+//returns -1 in case of error
 int Server::read_client_fd(int fd)
 {
     char buf[4096];
@@ -262,49 +341,12 @@ int Server::read_client_fd(int fd)
 
         std::cerr << "Buffer limit reached for fd " << fd << ", cleaning buffer" << std::endl;
         this->_localUsers[fd].rbuf.clear();
-        return 1;
+        return 0; //1 si on veut lire et traiter les 512 premiers octets
     }
 
     if (r > 0) {
         this->_localUsers[fd].rbuf.append(buf, buf + r); // &buf[r]
         // std::cout << "Received " << r << " bytes from fd " << fd << std::endl;
-        
-        size_t pos;
-        while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) {
-            std::string line = this->_localUsers[fd].rbuf.substr(0, pos);
-            this->_localUsers[fd].rbuf.erase(0, pos + 2);
-            
-            // TODO : will be moved to another fct
-            std::cout << "Processing: [" << line << "]" << std::endl;
-            if (line.rfind("PONG", 0) == 0) {
-                pong_command(line, fd, this->_localUsers);
-            }
-            else if (line.rfind("PASS", 0) == 0) {
-                pass_command(line, fd, this->_localUsers, this->_password);
-            }
-            else if (line.rfind("NICK", 0) == 0) {
-                nick_command(line, fd, this->_localUsers);
-            }
-            else if (line.rfind("USER", 0) == 0) {
-                user_command(line, fd, this->_localUsers);    
-            }
-            else {
-                std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
-            }
-            
-            this->_localUsers[fd].last_ping = std::time(NULL);
-            
-            if (!this->_localUsers[fd].client->registered && 
-                this->_localUsers[fd].client->password_correct == true && 
-                this->_localUsers[fd].client->getNickname() != "" && 
-                this->_localUsers[fd].client->getUsername() != "") {
-                
-                this->send_welcome(fd);
-                this->_localUsers[fd].client->registered = true;
-                std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
-            }
-        }
-        
         return 1;
         
     } else if (r == 0) {
@@ -315,15 +357,16 @@ int Server::read_client_fd(int fd)
         return 0;
     } else {
         //error handling : ici il faut que le parsing attende !
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return 1;
-        } else {
+        //Ces flags sont importants si on utilise EPOLET, sans, c'est peut etre superflu
+        // if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        //     return 2; // 1 -> 2
+        // } else {
             perror("recv");
             epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
             close(fd);
             this->_localUsers.erase(fd);
-            return 0;
-        }
+            return -1;
+        // }
     }
 }
 
@@ -356,7 +399,10 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
                 // 0 = client disconnected
                 if (result == 0) {
                     continue;
+                } else if (result == 1 ){
+                    this->parse_command(fd);
                 }
+                // else : erreur de recv 
             }
 
             //EPOLLOUT : We set that flag when we write in a client buffer, we need to send it

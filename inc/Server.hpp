@@ -8,6 +8,7 @@
 #include <sys/epoll.h>
 #include "NetworkState.hpp"
 #include "ACommand.hpp"
+#include <vector>
 
 const int MAX_EVENTS = 64; //Faire une taille dynamique (au fil de l'eau -> vecteur)
                            //Interet des bornes ? deinfe / global
@@ -42,7 +43,9 @@ class Server {
     void send_welcome(int fd);
     void remove_inactive_localUsers();
     void check_localUsers_ping();
-    ACommand* parse_command();
+    ACommand* parse_command(int fd);
+    std::string get_command(std::string line);
+    std::vector<std::string> get_params(std::string line);
 
     Server(int port, std::string password);
     ~Server();
