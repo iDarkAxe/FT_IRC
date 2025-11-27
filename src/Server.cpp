@@ -303,35 +303,24 @@ ACommand* Server::parse_command(int fd)
             return NULL;
         // std::cout << "CMD = " << cmd << std::endl;
         std::vector<std::string> params = this->get_params(line);
-        // return CommandFactory(cmd, params);
+        return CommandFactory::createCommand(cmd, params);
 
-        // if (line.rfind("PONG", 0) == 0) {
-        //     pong_command(line, fd, this->_localUsers);
-        // }
-        // else if (line.rfind("PASS", 0) == 0) {
-        //     pass_command(line, fd, this->_localUsers, this->_password);
-        // }
-        // else if (line.rfind("NICK", 0) == 0) {
-        //     nick_command(line, fd, this->_localUsers);
-        // }
-        // else if (line.rfind("USER", 0) == 0) {
-        //     user_command(line, fd, this->_localUsers);    
-        // }
-        // else {
-        //     std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
-        // }
-
-        this->_localUsers[fd].last_ping = std::time(NULL);
-
-        if (!this->_localUsers[fd].client->_registered && 
-            this->_localUsers[fd].client->_password_correct == true && 
-            this->_localUsers[fd].client->getNickname() != "" && 
-            this->_localUsers[fd].client->getUsername() != "") {
-            
-            this->send_welcome(fd);
-            this->_localUsers[fd].client->_registered = true;
-            std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
+        if (line.rfind("PONG", 0) == 0) {
+            pong_command(line, fd, this->_localUsers);
         }
+        else if (line.rfind("PASS", 0) == 0) {
+            pass_command(line, fd, this->_localUsers, this->_password);
+        }
+        else if (line.rfind("NICK", 0) == 0) {
+            nick_command(line, fd, this->_localUsers);
+        }
+        else if (line.rfind("USER", 0) == 0) {
+            user_command(line, fd, this->_localUsers);    
+        }
+        else {
+            std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
+        }
+
     }
 
     return NULL;
@@ -414,7 +403,24 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
                 if (result == 0) {
                     continue;
                 } else if (result == 1 ){
-                    this->parse_command(fd);
+                    ACommand* cmd = this->parse_command(fd);
+                    if (cmd)
+                    {
+                        cmd->execute(this->_localUsers[fd].client, *this->_networkState);
+                        delete cmd;
+                    }
+
+                    this->_localUsers[fd].last_ping = std::time(NULL);
+
+                    if (!this->_localUsers[fd].client->_registered && 
+                        this->_localUsers[fd].client->_password_correct == true && 
+                        this->_localUsers[fd].client->getNickname() != "" && 
+                        this->_localUsers[fd].client->getUsername() != "") {
+                        
+                        this->send_welcome(fd);
+                        this->_localUsers[fd].client->_registered = true;
+                        std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
+                    }
                 }
                 // else : erreur de recv 
             }

@@ -32,6 +32,7 @@ INC = \
 	utils.hpp \
 	ACommand.hpp \
 	CommandFactory.hpp \
+	PassCommand.hpp \
 	InviteCommand.hpp \
 	Server_utils.h \
 	LocalUser.hpp \
@@ -49,6 +50,7 @@ SRC = \
 	Debug.cpp \
 	CommandFactory.cpp \
 	InviteCommand.cpp \
+	PassCommand.cpp \
 	utils.cpp \
 	Server.cpp \
 	Client.cpp \

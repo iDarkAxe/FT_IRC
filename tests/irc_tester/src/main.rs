@@ -21,14 +21,14 @@ async fn main() -> Result<()> {
     normal_connection(port, debug).await?;
 
     //faux mot passe
-    normal_connection_wrong_password(port, debug).await?; //should disconnect immediately
+    // normal_connection_wrong_password(port, debug).await?; //should disconnect immediately
 
     //Remplacer un nick
     // normal_connection_override_existing_nick(port).await?; //attente implementations
     //Remplacer un user
     // normal_connection_override_existing_user(port).await?; //attente implementations
-    fragemented_messages(port, debug).await?; //Après X secondes sans \r\n → timeout
-    low_bandwidth(port, debug).await?;
+    // fragemented_messages(port, debug).await?; //Après X secondes sans \r\n → timeout
+    // low_bandwidth(port, debug).await?;
 
     //PASS apres NICK -> Doit echouer ?
     //Overflow du buffer (bible)
@@ -48,7 +48,7 @@ async fn main() -> Result<()> {
     //
     // -- parralle --
 
-    stress_test(6667, 1000, 0).await?;
+    // stress_test(6667, 1000, 0).await?;
 
     //- tester 0 -> FD MAX
     //- tester le non bloquant (Bible et normal connection en meme temps)

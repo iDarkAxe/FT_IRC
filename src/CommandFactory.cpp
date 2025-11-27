@@ -1,5 +1,6 @@
 #include "CommandFactory.hpp"
 #include "InviteCommand.hpp"
+#include "PassCommand.hpp"
 
 CommandFactory::CommandFactory() {}
 CommandFactory::~CommandFactory() {}
@@ -43,8 +44,8 @@ ACommand* CommandFactory::createCommand(const std::string& command, const std::v
 		// 	return new SetNickCommand(params);
 		// case USER:
 		// 	return new SetUsernameCommand(params);
-		// case PASS:
-		// 	return new PasswordCommand(params);
+		case PASS:
+			return new PassCommand(params);
 		// case JOIN:
 		// 	return new JoinCommand(params);
 		// case LEAVE:
