@@ -12,6 +12,10 @@ kill_server() {
 }
 trap kill_server EXIT
 
+# Port < 0
+# Port 0 -> 1024
+# port > 65535  
+
 echo "Starting server on port $PORT..."
 $SERVER "$PORT" "$PASS" > .server.log 2>&1 &
 SERVER_PID=$!
@@ -38,5 +42,6 @@ echo "Starting Rust tester..."
 echo "Kill " $SERVER_PID 
 kill $SERVER_PID
 
-echo "--- Server log ---"
-cat .server.log
+# echo "--- Server log ---"
+# verbose mode
+# cat .server.log
