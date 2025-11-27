@@ -28,58 +28,66 @@ Server::Server(int port, std::string password) :  _port(port), _password(passwor
 
 int Server::init_network(NetworkState &networkState)
 {
-    this->_networkState = &networkState;
-    return 0;
+	this->_networkState = &networkState;
+	return 0;
 }
 
 //To documentate
 int Server::init_socket(int port) {
-    this->_server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (this->_server_socket < 0) {
-        perror("socket");
-        return -1;
-    }
+	this->_server_socket = socket(AF_INET, SOCK_STREAM, 0);
+	if (this->_server_socket < 0) {
+		perror("socket");
+		return -1;
+	}
 
-    int opt = 1;
-    if (setsockopt(this->_server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-        perror("setsockopt");
-        close(this->_server_socket);
-        return -1;
-    }
+	int opt = 1;
+	if (setsockopt(this->_server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+		perror("setsockopt");
+		close(this->_server_socket);
+		return -1;
+	}
 
-    sockaddr_in sin;
-    ::memset(&sin, 0, sizeof(sin));
+	sockaddr_in sin;
+	::memset(&sin, 0, sizeof(sin));
 
-    sin.sin_family = AF_INET;
-    sin.sin_addr.s_addr = htonl(INADDR_ANY);
+	sin.sin_family = AF_INET;
+	sin.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    sin.sin_port = htons(static_cast<uint16_t>(port));
+	sin.sin_port = htons(static_cast<uint16_t>(port));
 
-    if (bind(this->_server_socket, (sockaddr*)&sin, sizeof(sin)) < 0) {
-        perror("bind");
-        close(this->_server_socket);
-        return -1;
-    }
-    if (listen(this->_server_socket, SOMAXCONN) < 0) {
-        perror("listen");
-        close(this->_server_socket);
-        return -1;
-    }
+	if (bind(this->_server_socket, reinterpret_cast<const sockaddr*>(&sin), sizeof(sin)) < 0) {
+		perror("bind");
+		close(this->_server_socket);
+		return -1;
+	}
+	if (listen(this->_server_socket, SOMAXCONN) < 0) {
+		perror("listen");
+		close(this->_server_socket);
+		return -1;
+	}
 
-    if (make_nonblocking(this->_server_socket) < 0) {
-        perror("make_nonblocking");
-        close(this->_server_socket);
-        return -1;
-    }
-    return this->_server_socket;
+	if (make_nonblocking(this->_server_socket) < 0) {
+		perror("make_nonblocking");
+		close(this->_server_socket);
+		return -1;
+	}
+	return this->_server_socket;
 }
 
 void Server::enable_epollout(int fd)
 {
-    epoll_event ev;
-    ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
-    ev.data.fd = fd;
-    epoll_ctl(this->_epfd, EPOLL_CTL_MOD, fd, &ev);
+	epoll_event ev;
+	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
+	ev.data.fd = fd;
+	epoll_ctl(this->_epfd, EPOLL_CTL_MOD, fd, &ev);
+}
+
+void Server::disable_epollout(int fd)
+{
+	epoll_event ev;
+	ev.events = EPOLLIN | EPOLLRDHUP;
+	ev.data.fd = fd;
+	epoll_ctl(this->_epfd, EPOLL_CTL_MOD, fd, &ev);
 }
 
 int Server::write_client_fd(int fd)
@@ -163,12 +171,12 @@ void Server::new_client(int server_fd) {
 
 void Server::client_quited(int fd) // leaved plutot que quited
 {
-    std::cout << "Remote closed: " << fd << std::endl;
-    //we remove the leaving client fd, and the event struct associated
-    epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
-    close(fd);
-    //we delete in our map the leaving client
-    this->_localUsers.erase(fd);
+	std::cout << "Remote closed: " << fd << std::endl;
+	//we remove the leaving client fd, and the event struct associated
+	epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
+	close(fd);
+	//we delete in our map the leaving client
+	this->_localUsers.erase(fd);
 }
 
 void Server::send_welcome(int fd)
@@ -184,23 +192,23 @@ void Server::send_welcome(int fd)
 
 void Server::remove_inactive_localUsers()
 {
-    for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin(); it != this->_localUsers.end(); ++it)
-    {
-        int fd = it->first;
-        LocalUser& localuser = it->second;
-        
-        std::time_t now = std::time(NULL);
-        if (now > localuser.timeout) // 1 min
-        {
-            std::stringstream ss;
-            ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " timed out" << "\r\n";
-            this->_localUsers[fd].wbuf += ss.str();
-            this->enable_epollout(fd);
-            this->write_client_fd(fd);
-            close(fd);
-            this->_localUsers.erase(fd);
-        }
-    }
+	for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin(); it != this->_localUsers.end(); ++it)
+	{
+		int fd = it->first;
+		LocalUser& localuser = it->second;
+		
+		std::time_t now = std::time(NULL);
+		if (now > localuser.timeout) // 1 min
+		{
+			std::stringstream ss;
+			ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " timed out" << "\r\n";
+			this->_localUsers[fd].wbuf += ss.str();
+			this->enable_epollout(fd);
+			this->write_client_fd(fd);
+			close(fd);
+			this->_localUsers.erase(fd);
+		}
+	}
 }
 
 void Server::check_localUsers_ping()
@@ -416,42 +424,120 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 
 void Server::RunServer() {
 
-    this->_server_socket = init_socket(this->_port);
-    if (this->_server_socket < 0)
-        exit(EXIT_FAILURE);
-    std::cout << format_time() << " Listening on port: " << this->_port << std::endl;
+	this->_server_socket = init_socket(this->_port);
+	if (this->_server_socket < 0)
+		exit(EXIT_FAILURE);
+	std::cout << format_time() << " Listening on port: " << this->_port << std::endl;
 
-    this->_epfd = init_epoll(this->_server_socket);
-    //doc 
-    epoll_event ev;
-    ev.events = EPOLLIN | EPOLLRDHUP; // RDHUP pour détecter fermeture distante
-                                      //EPOLLET permet de rendre les sockets non bloquants ?;
-    ev.data.fd = this->_server_socket;
-    if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, this->_server_socket, &ev) < 0) {
-        perror("epoll_ctl add server");
-        close(this->_server_socket);
-        close(this->_epfd);
-        exit(EXIT_FAILURE);
-    }
+	this->_epfd = init_epoll(this->_server_socket);
+	//doc 
+	epoll_event ev;
+	ev.events = EPOLLIN | EPOLLRDHUP; // RDHUP pour détecter fermeture distante
+									  //EPOLLET permet de rendre les sockets non bloquants ?;
+	ev.data.fd = this->_server_socket;
+	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, this->_server_socket, &ev) < 0) {
+		perror("epoll_ctl add server");
+		close(this->_server_socket);
+		close(this->_epfd);
+		exit(EXIT_FAILURE);
+	}
 
-    //hash map pour associer chaque client a son fd : acceder a chaque client en utilisant son fd comme cle 
-    std::map<int, LocalUser> localUsers;
-    epoll_event events[MAX_EVENTS];
+	//hash map pour associer chaque client a son fd : acceder a chaque client en utilisant son fd comme cle 
+	epoll_event events[MAX_EVENTS];
 
-    while (true) {
-        //we check for events from our localUsers fd registered
-        int n = epoll_wait(this->_epfd, events, MAX_EVENTS, 2000); //timeout 2 sec -> revoir la gestion du timeout : retour de fct / teste evs
-        if (n < 0) {
-            // if (errno == EINTR)
-            //   continue; // signal interrompt -> relancer
-            perror("epoll_wait");
-            break;
-        }
-        handle_events(n, events);
-        this->check_localUsers_ping(); //si on n'a pas eu de signe d'activite depuis trop longtemps
-        this->remove_inactive_localUsers(); // remove inactive localUsers after a unanswered ping
-    }
-    close(this->_server_socket);
-    close(this->_epfd);
+	while (true) {
+		//we check for events from our localUsers fd registered
+		int n = epoll_wait(this->_epfd, events, MAX_EVENTS, 2000); //timeout 2 sec -> revoir la gestion du timeout : retour de fct / teste evs
+		if (n < 0) {
+			// if (errno == EINTR)
+			//   continue; // signal interrompt -> relancer
+			perror("epoll_wait");
+			break;
+		}
+		handle_events(n, events);
+		this->check_localUsers_ping(); //si on n'a pas eu de signe d'activite depuis trop longtemps
+		this->remove_inactive_localUsers(); // remove inactive localUsers after a unanswered ping
+	}
+	close(this->_server_socket);
+	close(this->_epfd);
 }
 
+bool Server::reply(Client* client, std::string message)
+{
+	if (!client)
+	{
+		Debug::print(ERROR, "No client given");
+		return false;
+	}
+	std::string &wbuf = client->getLocalClient()->wbuf;
+	if (!message.empty())
+		wbuf.append(message).append("\r\n");
+	while (!wbuf.empty())
+	{
+		ssize_t n = send(client->getLocalClient()->fd, wbuf.c_str(), wbuf.size(), 0);
+
+		if (n > 0) {
+			Debug::print(INFO, "Reply to " + client->getNickname() + ": " + wbuf.substr(0, static_cast<size_t>(n)));
+			wbuf.erase(0, static_cast<size_t>(n));
+		}
+		//socket buffer full 
+		else if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+			Debug::print(INFO, "The message couldn't be send in one try, retrying next time");
+			enable_epollout(client->getLocalClient()->fd);
+			return 0;
+		}
+		else {
+			// error or client disconnected
+			std::cerr << "[ERROR] Send error on fd " << client->getLocalClient()->fd << "\n";
+			epoll_ctl(this->_epfd, EPOLL_CTL_DEL, client->getLocalClient()->fd, NULL);
+			this->_networkState->removeClient(client->getNickname());
+			close(client->getLocalClient()->fd);
+			_localUsers.erase(client->getLocalClient()->fd);
+			return false;
+		}
+	}
+	return true;
+}
+
+bool Server::replyChannel(Channel& channel, std::string message)
+{
+	bool ret = true;
+	for (std::set<Client *>::iterator it = channel.getClients().begin(); it != channel.getClients().end(); ++it)
+	{
+		if (!reply(*it, message))
+		{
+			ret = false;
+			Debug::print(ERROR, "The following message couldn't be properly send: " + message);
+		}
+	}
+	return ret;
+}
+
+bool Server::replyChannelOnlyOP(Channel& channel, std::string message)
+{
+	bool ret = true;
+	for (std::set<Client*>::iterator it = channel.getOperators().begin(); it != channel.getOperators().end(); ++it)
+	{
+		if (!reply(*it, message))
+		{
+			ret = false;
+			Debug::print(ERROR, "The following message couldn't be properly send: " + message);
+		}
+	}
+	return ret;
+}
+
+bool Server::broadcast(NetworkState& network, std::string message)
+{
+	(void)network;
+	// TODO Nécessite d'avoir une liste de tout les LocalUsers
+	std::cout << "Broadcast message: " << message << std::endl;
+	return true;
+}
+
+bool Server::noticeServers(NetworkState& network, std::string message)
+{
+	(void)network;
+	std::cout << "Notice servers: " << message << std::endl;
+	return true;
+}

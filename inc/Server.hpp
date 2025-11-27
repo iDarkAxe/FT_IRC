@@ -10,8 +10,27 @@
 #include "ACommand.hpp"
 #include <vector>
 
-const int MAX_EVENTS = 64; //Faire une taille dynamique (au fil de l'eau -> vecteur)
-                           //Interet des bornes ? deinfe / global
+#include <sys/types.h>
+#include <sys/epoll.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <iostream>
+#include <vector>
+#include "Server.hpp"
+#include <unistd.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <cstdio>
+#include <cstring>
+#include <string.h>
+#include <map> 
+#include "Server_utils.h"
+
+const int MAX_EVENTS = 64;	//Faire une taille dynamique (au fil de l'eau -> vecteur)
+							//Interet des bornes ? deinfe / global
 
 class Server {
   private:
@@ -47,10 +66,15 @@ class Server {
     std::string get_command(std::string line);
     std::vector<std::string> get_params(std::string line);
 
-    Server(int port, std::string password);
-    ~Server();
-    // Server(const Server& other);
-    // Server& operator=(const Server& other);
+	Server(int port, std::string password);
+	~Server();
+	// Server(const Server& other);
+	// Server& operator=(const Server& other);
+	bool reply(Client* client, std::string message);
+	bool replyChannel(Channel& channel, std::string message);
+	bool replyChannelOnlyOP(Channel& channel, std::string message);
+	bool broadcast(NetworkState&, std::string message);
+	bool noticeServers(NetworkState&, std::string message);
 };
 
-#endif 
+#endif	// SERVER_HPP
