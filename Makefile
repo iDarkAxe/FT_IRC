@@ -34,6 +34,7 @@ INC = \
 	CommandFactory.hpp \
 	InviteCommand.hpp \
 	TopicCommand.hpp \
+	JoinCommand.hpp \
 	Server_utils.h \
 	LocalUser.hpp \
 	Client.hpp \
@@ -47,6 +48,7 @@ SRC = \
 	CommandFactory.cpp \
 	InviteCommand.cpp \
 	TopicCommand.cpp \
+	JoinCommand.cpp \
 	utils.cpp \
 	Server.cpp \
 	Client.cpp \
