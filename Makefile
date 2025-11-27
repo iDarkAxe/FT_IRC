@@ -9,7 +9,7 @@ NAME = ircserv
 # Debugging flags
 CXXFLAGS_DEBUG = -Wall -Wextra -g3 -std=c++98
 CXX_DEBUG = clang++
-CXX_DEBUG_CXXFLAGS = -std=c++98 -g3 -Weverything -Wno-padded -pedantic -O2 -Wwrite-strings -Wconversion -fsanitize=address -fsanitize=leak -Wno-covered-switch-default
+CXX_DEBUG_CXXFLAGS = -std=c++98 -g3 -Weverything -Wno-padded -pedantic -O2 -Wwrite-strings -Wconversion -fsanitize=address -fsanitize=leak -Wno-covered-switch-default -Wno-suggest-override -Wno-suggest-destructor-override
 #############################################################################################
 #                                                                                           #
 #                                         DIRECTORIES                                       #
