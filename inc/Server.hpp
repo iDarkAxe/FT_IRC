@@ -7,6 +7,7 @@
 #include <ctime> 
 #include <sys/epoll.h>
 #include "NetworkState.hpp"
+#include "ACommand.hpp"
 
 const int MAX_EVENTS = 64; //Faire une taille dynamique (au fil de l'eau -> vecteur)
                            //Interet des bornes ? deinfe / global
@@ -20,6 +21,7 @@ class Server {
     int _server_socket;
     int _epfd;
     NetworkState *_networkState;
+    int welcomed;
 
     Server(); // On ne veut pas de serveur sans mdp ni sans port
   public:
@@ -40,6 +42,7 @@ class Server {
     void send_welcome(int fd);
     void remove_inactive_localUsers();
     void check_localUsers_ping();
+    ACommand* parse_command();
 
     Server(int port, std::string password);
     ~Server();

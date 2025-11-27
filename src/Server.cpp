@@ -19,10 +19,11 @@
 #include <map> 
 #include "Server_utils.h"
 #include "Server.hpp"
+#include "ACommand.hpp"
 
 Server::~Server() {}
 
-Server::Server(int port, std::string password) :  _port(port), _password(password) {}
+Server::Server(int port, std::string password) :  _port(port), _password(password) {welcomed = 0;}
 
 int Server::init_network(NetworkState &networkState)
 {
@@ -120,6 +121,9 @@ void Server::new_client(int server_fd) {
             //avoid blocking epoll : in case there is no more client to accept
             if (errno == EAGAIN || errno == EWOULDBLOCK)
                 break;
+            if (errno == EMFILE || errno == ENFILE) {
+                std::cerr << "TOO MANY FILE DESCRIPTORS!" << std::endl;
+            }
             perror("accept");
             break;
         }
@@ -145,7 +149,7 @@ void Server::new_client(int server_fd) {
         c.rbuf = "";  
         c.wbuf = "";
         c.last_ping = std::time(NULL);
-        c.timeout = LONG_MAX; // 1min pour repondre PONG
+        c.timeout = std::time(NULL) + 60; // 1min pour repondre PONG
         Client* client = new Client(client_fd);
         c.client = client;
         client->setLocalClient(&c);
@@ -175,6 +179,8 @@ void Server::send_welcome(int fd)
     this->_localUsers[fd].wbuf += ss.str();
     this->enable_epollout(fd);
     this->write_client_fd(fd);
+    this->welcomed += 1;
+    std::cout << "welcomed = " << this->welcomed << std::endl;
 }
 
 void Server::remove_inactive_localUsers()
@@ -200,25 +206,47 @@ void Server::remove_inactive_localUsers()
 
 void Server::check_localUsers_ping()
 {
-    for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin(); it != this->_localUsers.end(); ++it)
+    for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin(); 
+         it != this->_localUsers.end(); ++it)
     {
         int fd = it->first;
         LocalUser& client = it->second;
 
         std::time_t now = std::time(NULL);
-        if (now - client.timeout > 5) // 5 sec
+        
+        if (now - client.last_ping > 30) 
         {
             std::stringstream ss;
-            std::time_t now = std::time(NULL);
             ss << "PING :" << now << "\r\n";
             client.wbuf += ss.str();
-            this->_localUsers[fd].timeout = now + 5000; // 5 sec de timeout 
+            client.timeout = now + 60;
             this->enable_epollout(fd);
             client.last_ping = now;
             std::cout << format_time() << " [PING :" << now << "] sent to client " << fd << std::endl; 
         }
     }
 }
+
+// std::string Server::get_command() 
+// {
+//     
+// }
+//
+// std::vector<int> Server::get_params()
+// {
+//
+// }
+//
+// ACommand* Server::parse_command()
+// {
+//     std::string cmd = this->get_command()
+//     if (!cmd)
+//         return 1;
+//     std::vector<int> params = this->get_params()
+//     if (params.empty())
+//         return NULL;
+//     return CommandFactory(cmds, params);
+// }
 
 int Server::read_client_fd(int fd)
 {
@@ -227,15 +255,20 @@ int Server::read_client_fd(int fd)
     // MSG_DONTWAIT : rend non bloquant et suffisant ?
     ssize_t r = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
     
+    if (this->_localUsers[fd].rbuf.size() >= 512) {
+        //On peut envoyer un message "not allowed msg > 512"
+
+        //si on veut traiter les 512 premiers octets il faut read ici 
+
+        std::cerr << "Buffer limit reached for fd " << fd << ", cleaning buffer" << std::endl;
+        this->_localUsers[fd].rbuf.clear();
+        return 1;
+    }
+
     if (r > 0) {
         this->_localUsers[fd].rbuf.append(buf, buf + r); // &buf[r]
         // std::cout << "Received " << r << " bytes from fd " << fd << std::endl;
         
-        // 512 max
-        //  - on execute ce qu'on peut
-        //  - on jette le reste : on clean, et on relit pas un truc qu'on veut pas lire
-
-
         size_t pos;
         while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) {
             std::string line = this->_localUsers[fd].rbuf.substr(0, pos);
@@ -281,7 +314,7 @@ int Server::read_client_fd(int fd)
         this->_localUsers.erase(fd);
         return 0;
     } else {
-        //error handling
+        //error handling : ici il faut que le parsing attende !
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return 1;
         } else {
