@@ -13,13 +13,13 @@ int main(int argc, char** argv)
 {
 	if (argc != 3)
 	{
-		std::cout << "Usage: ./ircserv <port> <password>" << std::endl;
+		std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
 		return -1;
 	}
-	int port = atoi(argv[1]);
-	if (port < 0) //revoir les ports autorises 
+	int port = atoi(argv[1]); // Needs to be replaced as atoi is not 'cpp like'
+	if (port < 1024 || port > 49151)
 	{
-		std::cout << "Incorrect port: " << port << std::endl;
+		std::cerr << "Incorrect port: " << port << std::endl;
 		return -1;
 	}
 	std::string password(argv[2]);
