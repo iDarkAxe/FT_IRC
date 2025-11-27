@@ -12,30 +12,30 @@
 template<typename T>
 void Debug::print(debug_level level, const T& content)
 {
-    switch (level)
-    {
-        case NOTHING:
-            return;
-        case INFO:
-            *stream << "[INFO] ";
-            break;
-        case DEBUG:
-            *stream << "[DEBUG] ";
-            break;
-        case ERROR:
-            if (useColors)
-                *errStream << "[" << RED << "ERROR" << RESET << "] ";
-            else
-                *errStream << "[ERROR] ";
-            break;
-        default:
-            break;
-    }
-    
-    if (level == ERROR)
-        *errStream << content << std::endl;
-    else
-        *stream << content << std::endl;
+	switch (level)
+	{
+		case NOTHING:
+			return;
+		case INFO:
+			*stream << "[INFO] ";
+			break;
+		case DEBUG:
+			*stream << "[DEBUG] ";
+			break;
+		case ERROR:
+			if (useColors)
+				*errStream << "[" << RED << "ERROR" << RESET << "] ";
+			else
+				*errStream << "[ERROR] ";
+			break;
+		default:
+			break;
+	}
+	
+	if (level == ERROR)
+		*errStream << content << std::endl;
+	else
+		*stream << content << std::endl;
 }
 
 /**
