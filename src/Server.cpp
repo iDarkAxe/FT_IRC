@@ -1,5 +1,4 @@
 #include <sys/types.h>
-// #include <climits>
 #include <sstream>
 #include <ctime>
 #include <fcntl.h>
@@ -272,7 +271,6 @@ ACommand* Server::parse_command(std::string line)
 
 
 //returns 1 to send a buff in parsing
-//returns 2 to wait more data in case of EAGAIN / EWOULDBLOCK
 //returns 0 in case of client disconnection
 //returns -1 in case of error
 int Server::read_client_fd(int fd)

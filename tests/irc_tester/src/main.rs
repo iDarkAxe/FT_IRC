@@ -22,7 +22,8 @@ async fn main() -> Result<()> {
 
     //faux mot passe
     normal_connection_wrong_password(port, debug).await?; //should disconnect immediately
-
+    //not PASS as first command
+    // normal_connection_not_pass_first(port, debug).await?;
     //Remplacer un nick
     // normal_connection_override_existing_nick(port).await?; //attente implementations
     //Remplacer un user
@@ -30,9 +31,8 @@ async fn main() -> Result<()> {
     fragemented_messages(port, debug).await?; //Après X secondes sans \r\n → timeout
     low_bandwidth(port, debug).await?;
 
-    //PASS apres NICK -> Doit echouer ?
-    //Overflow du buffer (bible)
-    // read_bible(port).await?;   //On veut un MAX buffer sur la lecture ?
+    //Overflow du buffer (> 512)
+    // read_overflow(port).await?;   //On veut un MAX buffer sur la lecture ?
     //  max 512 octets par ligne
     //  max X lignes par seconde
     // Le serveur NE doit PAS :
@@ -46,23 +46,94 @@ async fn main() -> Result<()> {
     //NICK \xC0bad\r\n
     //USER test 0 * :name\xFF\r\n
     //
-    // -- parralle --
-
-    stress_test(6667, 1000, 0).await?;
-
-    //- tester 0 -> FD MAX
-    //- tester le non bloquant (Bible et normal connection en meme temps)
-    //- Overflow 2 fd
-
     // Timeout tests
     // - PONG kick
     // - not registered and only answer to ping
     // - partial registration and only answer to ping
     //
     //
-    //
-    //
+    // -- parrallele --
 
+    stress_test(6667, 1000, 0).await?;
+
+    //- tester le non bloquant (Bible et normal connection en meme temps)
+    //- Overflow 2 fd
+
+    //NICK :
+    //- Normal : claim a free nick
+    //- Normal : change for a free nick
+    //- Not registered
+    //- ERR_NONNICKNAMEGIVEN
+    //- ERR_ERRONEUSNICKNAME
+    //- ERR_NICKNAMEINUSE
+    //
+    //PASS:
+    //- Normal : correct password
+    //- not as first cmd
+    //- ERRPASSWORDMISMATCHED
+    //- NEEDMOREPARAMS
+    //- ALREADYREGISTERED
+    //
+    //USER: 
+    //- normal : claim a username 
+    //???
+    //ALREADYREGISTERED
+    //NEEDMOREPARAMS
+
+    //
+    //JOIN:
+    //- normal : rejoindre un canal en le creant
+    //- normal : rejoindre un canal existant, avec un user dedans
+    //
+    //          ERR_NEEDMOREPARAMS             
+    //          ERR_BANNEDFROMCHAN
+    //          ERR_INVITEONLYCHAN              
+    //          ERR_BADCHANNELKEY
+    //          ERR_CHANNELISFULL               
+    //          ERR_BADCHANMASK
+    //          ERR_NOSUCHCHANNEL               
+    //          ERR_TOOMANYCHANNELS
+    //          ERR_TOOMANYTARGETS              
+    //          ERR_UNAVAILRESOURCE
+    //          RPL_TOPIC
+    //- Not registered
+    //
+    //INVITE :
+    // - Normal : 2 clients, one inviting in an chan, another not in this chan
+    // - NEEDMOREPARAMS
+    // - NOSUCHNICK
+    // - NOTONCHANNEL
+    // - USERONCHANNEL
+    // - RPL_AWAY
+    // - RPL_INVITING
+    // - CHANOPRIVSNEEDED
+    // - RPL AWAY
+    // - RPL INVITING
+    // - Not registered
+    //
+    //PRIVMSG : 
+    // - NORMAL : 2 client in same chan
+    // - TOOMANYTARGET
+    // - NORECIPIENT
+    // - NO TEXTTOSEND
+    // - Not registerd
+    // - NOT op in chan targeted ?
+    //
+    //KICK :
+    //- Normal : kick user
+    //- Normal : kick user :msg
+    //- Normal : chan user
+    //- Normal : chan user :msg
+    //- Normal : chan chan ... user user ...
+    //- Normal : chan chan ... user user ... :msg
+    //- @ -> as not operator
+    //- NEEDMOREPARAMS
+    //- BADCHANMASK
+    //- NO SUCH CHAN
+    //- USERNOTONCHAN
+    //- USERNOTINCHAN
+    //- Not registered
+    //- 
     Ok(())
 }
 

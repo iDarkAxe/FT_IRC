@@ -7,28 +7,33 @@ PassCommand::PassCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void PassCommand::execute(Client* executor, NetworkState& network)
+std::vector<int> PassCommand::execute(Client* executor, NetworkState& network)
 {
+	std::vector<int> vec;
+
 	(void)network;
+
 	if (_params.empty() || _params[1].empty())
-		// ERR_NEEDMOREPARAMS
+		vec.push_back(461); // ERR_NEEDMOREPARAMS
 	if (executor->_registered)
-	{
-		// ERR_ALREADYREGISTRED
-	}
+		vec.push_back(462); // ERR_ALREADYREGISTRED
+
+	if (!vec.empty())
+		return vec;
 
   if (executor->_password_correct)
-    return; // si il a deja renseigne un mot de passe correct
+	{
+		vec.push_back(0);
+		return vec;
+	}
 
 	if (_params[1] == Server::getPassword())
 	{
 		// std::cout << "Correct password" << std::endl;
 	  executor->_password_correct = true;
+	  vec.push_back(0);
 	} else {
- // 464    ERR_PASSWDMISMATCH
- 		// Server::kick(executor); besoin de l'instance de server ici .. 
- 		// std::vector<LocalUser>* map = Server::getClientsMap();
+		vec.push_back(464); //ERR_PASSWDMISMATCH
 	}
-
-	return;
+	return vec;
 }

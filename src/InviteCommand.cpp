@@ -5,11 +5,13 @@ InviteCommand::InviteCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void InviteCommand::execute(Client* executor, NetworkState& network)
+std::vector<int> InviteCommand::execute(Client* executor, NetworkState& network)
 {
+	std::vector<int> vec;
+
 	if (_params.size() < 2) {
 		// ERR_NEEDMOREPARAMS
-		return;
+		return vec;
 	}
 	Client* target = network.getClient(_params[0]);
 	Channel* channel = network.getChannel(_params[1]);
@@ -17,21 +19,21 @@ void InviteCommand::execute(Client* executor, NetworkState& network)
 		// ERR_NOSUCHNICK
 		Debug::print(DEBUG, "Invalid params");
 		// executor.sendError("Invalid params");
-		return;
+		return vec;
 	}
 	if (!channel->isClientInChannel(executor))
 	{
 		// ERR_NOTONCHANNEL
 		Debug::print(DEBUG, "Client is not in channel");
 		// executor.sendError("Client is not in channel");
-		return;
+		return vec;
 	}
 	if (channel->isClientInChannel(target))
 	{
 		// ERR_USERONCHANNEL
 		Debug::print(DEBUG, "Target user is already in channel");
 		// executor.sendError("Target user is already in channel");
-		return;
+		return vec;
 	}
 	if (channel->getModes().is_invite_only)
 	{
@@ -40,18 +42,18 @@ void InviteCommand::execute(Client* executor, NetworkState& network)
 			if (!target)
 			{
 				// RPL_AWAY
-				return;
+				return vec;
 			}
 			// RPL_INVITING
 			channel->addClient(target);
-			return;
+			return vec;
 		}
 		else
 		{
 			// ERR_CHANOPRIVSNEEDED
 			Debug::print(DEBUG, "Client is not channel operator");
 			// executor.sendError("Client is not channel operator");
-			return;
+			return vec;
 		}
 	}
 	else // Not invite only
@@ -59,10 +61,10 @@ void InviteCommand::execute(Client* executor, NetworkState& network)
 		if (!target)
 		{
 			// RPL_AWAY
-			return;
+			return vec;
 		}
 		// RPL_INVITING
 		channel->addClient(target);
-		return;
+		return vec;
 	}
 }

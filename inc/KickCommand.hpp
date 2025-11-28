@@ -1,17 +1,17 @@
-#ifndef NICKCOMMAND_HPP
-#define NICKCOMMAND_HPP
+#ifndef KICKCOMMAND_HPP
+#define KICKCOMMAND_HPP
 
 #include "ACommand.hpp"
 
-class NickCommand : public ACommand
+class KickCommand : public ACommand
 {
 //= Variables =//
 protected:
 
 //= Methods =//
 public:
-	NickCommand(std::vector<std::string> params);
-	~NickCommand() {};
+	KickCommand(std::vector<std::string> params);
+	~KickCommand() {};
 	std::vector<int> execute(Client* executor, NetworkState& network);
 };
 
