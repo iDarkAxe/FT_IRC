@@ -6,13 +6,13 @@ KickCommand::KickCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-std::vector<int> KickCommand::execute(Client* executor, NetworkState& network)
+void KickCommand::execute(Client* executor, NetworkState& network)
 {
 	std::vector<int> vec;
 	if (_params.size() < 3)
 	{
 		vec.push_back(461); // ERR_NEEDMOREPARAMS
-		return vec;
+		return;
 	}
 
 	std::vector<std::string> chans;
@@ -36,7 +36,7 @@ std::vector<int> KickCommand::execute(Client* executor, NetworkState& network)
 	if (users.size() != chans.size())
 	{
 		vec.push_back(476); //ERR_BADCHANMASK;
-		return vec;
+		return;
 	}
 
 	for (size_t i = 0; i < users.size(); ++i) {
@@ -63,7 +63,7 @@ std::vector<int> KickCommand::execute(Client* executor, NetworkState& network)
 
 	if (vec.empty())
 		vec.push_back(0);
-	return vec;
+	return;
 }
 
 // KICK #a,#b John,Mark :Raison du kick

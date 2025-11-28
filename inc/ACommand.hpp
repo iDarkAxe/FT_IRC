@@ -41,7 +41,7 @@ protected:
 //= Methods =//
 public:
 	virtual ~ACommand() {}
-	virtual std::vector<int> execute(Client* executor, NetworkState& network) = 0;
+	virtual void execute(Client* executor, NetworkState& network) = 0;
 	virtual void print_params() const
 	{
 		std::cout << "Command parameters:" << std::endl;

@@ -7,7 +7,7 @@ PassCommand::PassCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-std::vector<int> PassCommand::execute(Client* executor, NetworkState& network)
+void PassCommand::execute(Client* executor, NetworkState& network)
 {
 	std::vector<int> vec;
 
@@ -19,12 +19,12 @@ std::vector<int> PassCommand::execute(Client* executor, NetworkState& network)
 		vec.push_back(462); // ERR_ALREADYREGISTRED
 
 	if (!vec.empty())
-		return vec;
+		return;
 
   if (executor->_password_correct)
 	{
 		vec.push_back(0);
-		return vec;
+		return;
 	}
 
 	if (_params[1] == Server::getPassword())
@@ -35,5 +35,5 @@ std::vector<int> PassCommand::execute(Client* executor, NetworkState& network)
 	} else {
 		vec.push_back(464); //ERR_PASSWDMISMATCH
 	}
-	return vec;
+	return;
 }

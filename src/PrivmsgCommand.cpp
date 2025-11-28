@@ -7,7 +7,7 @@ PrivmsgCommand::PrivmsgCommand(std::vector<std::string> params)
 }
 
 //supporter l;envoie a des channels, si operator ?
-std::vector<int> PrivmsgCommand::execute(Client* executor, NetworkState& network)
+void PrivmsgCommand::execute(Client* executor, NetworkState& network)
 {
 	std::vector<Int> vec;
 
@@ -31,7 +31,7 @@ std::vector<int> PrivmsgCommand::execute(Client* executor, NetworkState& network
 			vec.push_back(401); // ERR_NOSUCHNICK
 		}
 	}
-  return vec;
+  return;
 }
 
 // 	

@@ -12,7 +12,7 @@ protected:
 public:
 	PassCommand(std::vector<std::string> params);
 	~PassCommand() {};
-	std::vector<int> execute(Client* executor, NetworkState& network);
+	void execute(Client* executor, NetworkState& network);
 };
 
 #endif
