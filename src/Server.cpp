@@ -162,6 +162,7 @@ void Server::init_localuser(int client_fd)
     c.wbuf = "";
     //we want to kick incactives clients
     c.last_ping = std::time(NULL);
+    c.connection_time = std::time(NULL);
     c.timeout = -1;
     // the client object contains 
     this->_localUsers.insert(std::make_pair(client_fd, c));   
@@ -171,7 +172,6 @@ void Server::init_localuser(int client_fd)
 	client->setLocalClient(&ref);
     client->setUsername(""); // Mon check de registration implique que Username soit vide au depart. 
 	ref.client = client;
-    //On maintient deux listes ?
     this->_networkState->addClient("", client);
     std::cout << format_time() << " New client: " << client_fd << std::endl;
 }
@@ -254,6 +254,16 @@ std::vector<std::string> Server::get_params(std::string line)
     // }
 
     return params;
+}
+
+void Server::removeLocalUser(int fd) {
+    close(fd);
+	epoll_ctl(this->getEpfd(), EPOLL_CTL_DEL, fd, NULL);
+    this->_localUsers.erase(fd);   
+}
+
+int Server::getEpfd() const {
+    return _epfd;
 }
 
 std::string& Server::getPassword()
@@ -530,19 +540,21 @@ void Server::remove_inactive_localUsers()
     {
         int fd = it->first;
         LocalUser& localuser = it->second;
-
-        if (localuser.timeout > 0 && now > localuser.timeout)
+        now = std::time(NULL);
+        if ((localuser.timeout > 0 && now > localuser.timeout) || (!localuser.client->_registered && localuser.connection_time + 7 < now))
         {
             std::stringstream ss;
             if (localuser.client->_registered)
             {
-                ss << localuser.client->getUsername()
-                << " aka " << localuser.client->getNickname()
-                << " timed out\r\n";
+                // ss << localuser.client->getUsername()
+                // << " aka " << localuser.client->getNickname()
+                // << " timed out\r\n";
+                this->reply(localuser.client, "timed out");
 
             }
             else {
-                ss << "Disconnected: time out" << std::endl;
+                // ss << "Disconnected: timed out" << std::endl;
+                this->reply(localuser.client, "timed out");
             }
 
             localuser.wbuf += ss.str();
@@ -550,7 +562,7 @@ void Server::remove_inactive_localUsers()
             this->write_client_fd(fd);
 
             close(fd);
-
+	        epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
             this->_localUsers.erase(it++);   
         }
         else

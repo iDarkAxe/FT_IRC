@@ -9,7 +9,6 @@ PassCommand::PassCommand(std::vector<std::string> params)
 
 void PassCommand::execute(Client* executor, NetworkState& network, Server& server)
 {
-	(void)server;
 	(void)network;
 
 	if (_params.empty() || _params[1].empty())
@@ -30,6 +29,7 @@ void PassCommand::execute(Client* executor, NetworkState& network, Server& serve
 	  executor->_password_correct = true;
 	} else {
 		server.reply(executor, "Invalid password");
+		// server.removeLocalUser(executor->_localClient->fd);
 		//464 //ERR_PASSWDMISMATCH
 	}
 	return;

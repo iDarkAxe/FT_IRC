@@ -49,6 +49,8 @@ public:
 	Server(int port, std::string password);
 	~Server();
 	static std::string& getPassword();
+	int getEpfd() const;
+	void removeLocalUser(int fd);
 	// int getPort() const;
 	// int checkPassword();
 	void RunServer();
