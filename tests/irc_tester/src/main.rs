@@ -269,7 +269,7 @@ async fn normal_connection_wrong_password(port: u16, debug: bool) -> Result<()> 
         }
     }
     let combined = responses.concat();
-    if combined.contains("Incorrect password") {
+    if combined.contains("Invalid password") {
         ok("Wrong password:");
     } else {
         ko("Wrong password:");

@@ -12,7 +12,7 @@ protected:
 public:
 	UserCommand(std::vector<std::string> params);
 	~UserCommand() {};
-	void execute(Client* executor, NetworkState& network);
+	void execute(Client* executor, NetworkState& network, Server& server);
 };
 
 #endif

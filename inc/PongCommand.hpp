@@ -12,7 +12,7 @@ protected:
 public:
 	PongCommand(std::vector<std::string> params);
 	~PongCommand() {};
-	void execute(Client* executor, NetworkState& network);
+	void execute(Client* executor, NetworkState& network, Server& server);
 };
 
 #endif

@@ -7,6 +7,8 @@
 #include "NetworkState.hpp"
 #include "Debug.hpp"
 
+class Server;
+
 enum command_type
 {
 	INVITE,
@@ -42,7 +44,7 @@ protected:
 //= Methods =//
 public:
 	virtual ~ACommand() {}
-	virtual void execute(Client* executor, NetworkState& network) = 0;
+	virtual void execute(Client* executor, NetworkState& network, Server& server) = 0;
 	virtual void print_params() const
 	{
 		std::cout << "Command parameters:" << std::endl;

@@ -7,9 +7,10 @@ PrivmsgCommand::PrivmsgCommand(std::vector<std::string> params)
 }
 
 //supporter l;envoie a des channels, si operator ?
-void PrivmsgCommand::execute(Client* executor, NetworkState& network)
+void PrivmsgCommand::execute(Client* executor, NetworkState& network, Server& server)
 {
 	std::vector<int> vec;
+	(void)server;
 
 	if (!executor->_registered)
 		return;

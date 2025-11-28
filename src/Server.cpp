@@ -164,13 +164,13 @@ void Server::init_localuser(int client_fd)
     c.last_ping = std::time(NULL);
     c.timeout = -1;
     // the client object contains 
+    this->_localUsers.insert(std::make_pair(client_fd, c));   
     Client* client = new Client(client_fd);
     c.client = client;
   	LocalUser &ref = this->_localUsers[client_fd];   
-		client->setLocalClient(&ref);
-		ref.client = client
+	client->setLocalClient(&ref);
     client->setUsername(""); // Mon check de registration implique que Username soit vide au depart. 
-    this->_localUsers.insert(std::make_pair(client_fd, c));   
+	ref.client = client;
     //On maintient deux listes ?
     this->_networkState->addClient("", client);
     std::cout << format_time() << " New client: " << client_fd << std::endl;
@@ -343,7 +343,7 @@ void Server::interpret_msg(int fd)
         ACommand* cmd = this->parse_command(line);      
         //try catch ?
         if (cmd)
-            cmd->execute(this->_localUsers[fd].client, *this->_networkState);
+            cmd->execute(this->_localUsers[fd].client, *this->_networkState, *this);
     }
     this->_localUsers[fd].last_ping = std::time(NULL);
     this->is_authentification_complete(fd);

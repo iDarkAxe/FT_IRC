@@ -6,8 +6,10 @@ NickCommand::NickCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void NickCommand::execute(Client* executor, NetworkState& network)
+void NickCommand::execute(Client* executor, NetworkState& network, Server& server)
 {
+
+	(void)server;
 	std::vector<int> vec;
 	if (!executor->_password_correct)
 	{

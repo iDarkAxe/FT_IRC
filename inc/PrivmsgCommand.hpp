@@ -12,7 +12,7 @@ protected:
 public:
 	PrivmsgCommand(std::vector<std::string> params);
 	~PrivmsgCommand() {};
-	void execute(Client* executor, NetworkState& network);
+	void execute(Client* executor, NetworkState& network, Server& server);
 };
 
 #endif

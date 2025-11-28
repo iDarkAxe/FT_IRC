@@ -6,9 +6,11 @@ PongCommand::PongCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void PongCommand::execute(Client* executor, NetworkState& network)
+void PongCommand::execute(Client* executor, NetworkState& network, Server& server)
 {
 	(void)network;
+
+	(void)server;
 	//checker le timestamp ici
   std::time_t now = std::time(NULL);
   executor->_localClient->timeout = now + 5;

@@ -6,9 +6,11 @@ UserCommand::UserCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void UserCommand::execute(Client* executor, NetworkState& network)
+void UserCommand::execute(Client* executor, NetworkState& network, Server& server)
 {
 	std::vector<int> vec;
+
+	(void)server;
 
 	(void)network;
 	if (!executor->_password_correct)

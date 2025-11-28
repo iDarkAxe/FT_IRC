@@ -12,7 +12,7 @@ protected:
 public:
 	NickCommand(std::vector<std::string> params);
 	~NickCommand() {};
-	void execute(Client* executor, NetworkState& network);
+	void execute(Client* executor, NetworkState& network, Server& server);
 };
 
 #endif
