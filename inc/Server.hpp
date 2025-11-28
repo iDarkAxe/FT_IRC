@@ -64,7 +64,10 @@ public:
 	std::string get_command(std::string line);
 	std::vector<std::string> get_params(std::string line);
 	static std::string& getPassword();
-	static void kick(Client* client);
+	void init_localuser(int client_fd);
+	int init_epoll_event(int client_fd);
+	void is_authentification_complete(int fd);
+	void interpret_msg(int fd);
 
 	Server(int port, std::string password);
 	~Server();

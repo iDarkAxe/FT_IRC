@@ -1,4 +1,5 @@
 #include "PassCommand.hpp"
+#include "LocalUser.hpp"
 #include "Server.hpp"
 
 PassCommand::PassCommand(std::vector<std::string> params)
@@ -26,6 +27,7 @@ void PassCommand::execute(Client* executor, NetworkState& network)
 	} else {
  // 464    ERR_PASSWDMISMATCH
  		// Server::kick(executor); besoin de l'instance de server ici .. 
+ 		// std::vector<LocalUser>* map = Server::getClientsMap();
 	}
 
 	return;
