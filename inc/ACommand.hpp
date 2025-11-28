@@ -6,6 +6,7 @@
 #include "Client.hpp"
 #include "Server.hpp"
 #include "Debug.hpp"
+#include "Reply.hpp"
 
 class Server;
 

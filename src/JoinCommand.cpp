@@ -12,7 +12,7 @@ JoinCommand::JoinCommand(std::vector<std::string> params)
 void JoinCommand::execute(Client* executor, Server& server)
 {
 	if (_params.size() < 1) {
-		// ERR_NEEDMOREPARAMS
+		server.reply(executor, ERR_NEEDMOREPARAMS(executor->getNickname(), "JOIN"));
 		return;
 	}
 	(void)executor;
@@ -57,26 +57,26 @@ void JoinCommand::execute(Client* executor, Server& server)
 			continue; // Already in channel
 		if (channel->getModes().is_invite_only)
 		{
-			// ERR_INVITEONLYCHAN
+			server.reply(executor, ERR_INVITEONLYCHAN(executor->getNickname(), channel_names[i]));
 			continue;
 		}
 		if (channel->isKeySet(channel->getModes()))
 		{
 			if (!channel->isKeySame(chan_key))
 			{
-				// ERR_BADCHANNELKEY
+				server.reply(executor, ERR_BADCHANNELKEY(executor->getNickname(), channel_names[i]));
 				continue;
 			}
 			if (channel->getModes().is_limited && channel->getClients().size() >= channel->getUserLimit())
 			{
-				// ERR_CHANNELISFULL
+				server.reply(executor, ERR_CHANNELISFULL(executor->getNickname(), channel_names[i]));
 				continue;
 			}
 			channel->addClient(executor);
-			// RPL_TOPIC
+			server.reply(executor, RPL_TOPIC(executor->getNickname(), channel_names[i], channel->getTopic()));
 			continue;
 		}
 		channel->addClient(executor);
-		// RPL_TOPIC
+		server.reply(executor, RPL_TOPIC(executor->getNickname(), channel_names[i], channel->getTopic()));
 	}
 }

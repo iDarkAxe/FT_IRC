@@ -526,10 +526,15 @@ bool Server::reply(Client* client, std::string message)
 	return true;
 }
 
-bool Server::replyChannel(Channel& channel, std::string message)
+bool Server::replyChannel(Channel* channel, std::string message)
 {
+	if (!channel)
+	{
+		Debug::print(ERROR, "No channel given");
+		return false;
+	}
 	bool ret = true;
-	for (std::set<Client *>::iterator it = channel.getClients().begin(); it != channel.getClients().end(); ++it)
+	for (std::set<Client *>::iterator it = channel->getClients().begin(); it != channel->getClients().end(); ++it)
 	{
 		if (!reply(*it, message))
 		{
@@ -540,10 +545,15 @@ bool Server::replyChannel(Channel& channel, std::string message)
 	return ret;
 }
 
-bool Server::replyChannelOnlyOP(Channel& channel, std::string message)
+bool Server::replyChannelOnlyOP(Channel* channel, std::string message)
 {
+	if (!channel)
+	{
+		Debug::print(ERROR, "No channel given");
+		return false;
+	}
 	bool ret = true;
-	for (std::set<Client*>::iterator it = channel.getOperators().begin(); it != channel.getOperators().end(); ++it)
+	for (std::set<Client*>::iterator it = channel->getOperators().begin(); it != channel->getOperators().end(); ++it)
 	{
 		if (!reply(*it, message))
 		{

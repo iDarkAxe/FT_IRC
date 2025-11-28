@@ -8,30 +8,23 @@ InviteCommand::InviteCommand(std::vector<std::string> params)
 void InviteCommand::execute(Client* executor, Server& server)
 {
 	if (_params.size() < 2) {
-		
-		// ERR_NEEDMOREPARAMS
+		server.reply(executor, ERR_NEEDMOREPARAMS(executor->getNickname(), "INVITE"));
 		return;
 	}
 	Client* target = server.getNetwork().getClient(_params[0]);
 	Channel* channel = server.getNetwork().getChannel(_params[1]);
 	if (!target || !channel) {
-		// ERR_NOSUCHNICK
-		Debug::print(DEBUG, "Invalid params");
-		// executor.sendError("Invalid params");
+		server.reply(executor, ERR_NOSUCHNICK(executor->getNickname(), _params[1]));
 		return;
 	}
 	if (!channel->isClientInChannel(executor))
 	{
-		// ERR_NOTONCHANNEL
-		Debug::print(DEBUG, "Client is not in channel");
-		// executor.sendError("Client is not in channel");
+		server.reply(executor, ERR_NOTONCHANNEL(executor->getNickname(), _params[1]));
 		return;
 	}
 	if (channel->isClientInChannel(target))
 	{
-		// ERR_USERONCHANNEL
-		Debug::print(DEBUG, "Target user is already in channel");
-		// executor.sendError("Target user is already in channel");
+		server.reply(executor, ERR_USERONCHANNEL(executor->getNickname(), target->getNickname(), _params[1]));
 		return;
 	}
 	if (channel->getModes().is_invite_only)
@@ -40,18 +33,16 @@ void InviteCommand::execute(Client* executor, Server& server)
 		{
 			if (!target)
 			{
-				// RPL_AWAY
+				// RPL_AWAY : hors scope : commande AWAY
 				return;
 			}
-			// RPL_INVITING
 			channel->addClient(target);
+			server.reply(executor, RPL_INVITING(executor->getNickname(), _params[1], _params[0]));
 			return;
 		}
 		else
 		{
-			// ERR_CHANOPRIVSNEEDED
-			Debug::print(DEBUG, "Client is not channel operator");
-			// executor.sendError("Client is not channel operator");
+			server.reply(executor, ERR_CHANOPRIVSNEEDED(executor->getNickname(), _params[1]));
 			return;
 		}
 	}
@@ -59,11 +50,11 @@ void InviteCommand::execute(Client* executor, Server& server)
 	{
 		if (!target)
 		{
-			// RPL_AWAY
+			// RPL_AWAY : same
 			return;
 		}
-		// RPL_INVITING
 		channel->addClient(target);
+		server.reply(executor, RPL_INVITING(executor->getNickname(), _params[1], _params[0]));
 		return;
 	}
 }

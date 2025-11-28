@@ -73,8 +73,8 @@ public:
 	// Server(const Server& other);
 	// Server& operator=(const Server& other);
 	bool reply(Client* client, std::string message);
-	bool replyChannel(Channel& channel, std::string message);
-	bool replyChannelOnlyOP(Channel& channel, std::string message);
+	bool replyChannel(Channel* channel, std::string message);
+	bool replyChannelOnlyOP(Channel* channel, std::string message);
 	bool broadcast(NetworkState&, std::string message);
 	bool noticeServers(NetworkState&, std::string message);
 };

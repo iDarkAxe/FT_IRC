@@ -8,35 +8,32 @@ TopicCommand::TopicCommand(std::vector<std::string> params)
 void TopicCommand::execute(Client* executor, Server& server)
 {
 	if (_params.size() < 2) {
-		// ERR_NEEDMOREPARAMS
+		server.reply(executor, ERR_NEEDMOREPARAMS(executor->getNickname(), "TOPIC"));
 		return;
 	}
 	Channel* channel = server.getNetwork().getChannel(_params[0]);
 	if (!channel) {
-		// ERR_NOSUCHCHANNEL
+		server.reply(executor, ERR_NOSUCHCHANNEL(executor->getNickname(), _params[0]));
 		return;
 	}
 	if (channel->isClientInChannel(executor) == false) {
-		// ERR_NOTONCHANNEL
+		server.reply(executor, ERR_NOTONCHANNEL(executor->getNickname(), _params[0]));
 		return;
 	}
 	if (_params.size() == 2)
 	{
 		if (channel->getTopic().empty()) {
-			// RPL_NOTOPIC
+			server.reply(executor, RPL_NOTOPIC(executor->getNickname(), _params[0]));
 		} else {
-			// RPL_TOPIC
+			server.reply(executor, RPL_TOPIC(executor->getNickname(), _params[0], channel->getTopic()));
 		}
 		return;
 	}
 	std::string new_topic = _params[1];
 	if (channel->getModes().is_topic_set_op_only && !channel->isClientOPChannel(executor)) {
-		// ERR_CHANOPRIVSNEEDED
+		server.reply(executor, ERR_CHANOPRIVSNEEDED(executor->getNickname(), _params[0]));
 		return;
 	}
 	channel->setTopic(new_topic);
-	// Notify all channel members about the topic change
-	// example in RFC 
-	// :WiZ!jto@tolsun.oulu.fi TOPIC #test :New topic
-	// : ^servername 		   ^TOPIC ^channel ^new topic
+	server.replyChannel(channel, RPL_TOPIC(executor->getNickname(), _params[0], new_topic));
 }

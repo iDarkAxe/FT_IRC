@@ -40,6 +40,7 @@ INC = \
 	Client.hpp \
 	NetworkState.hpp \
 	Channel.hpp \
+	Reply.hpp \
 
 # Template implementation  files
 TPP = \
