@@ -160,7 +160,7 @@ void Server::init_localuser(int client_fd)
     c.wbuf = "";
     //we want to kick incactives clients
     c.last_ping = std::time(NULL);
-    c.timeout = std::time(NULL) + 60; // 1min pour repondre PONG
+    c.timeout = -1;
     // the client object contains 
     Client* client = new Client(client_fd);
     c.client = client;
@@ -414,7 +414,7 @@ void Server::RunServer() {
 
 	while (true) {
 		//we check for events from our localUsers fd registered
-		int n = epoll_wait(this->_epfd, events, MAX_EVENTS, 2000); //timeout 2 sec -> revoir la gestion du timeout : retour de fct / teste evs
+		int n = epoll_wait(this->_epfd, events, MAX_EVENTS, 2000); //timeout 2 sec 
 		if (n < 0) {
 			// if (errno == EINTR)
 			//   continue; // signal interrompt -> relancer
@@ -513,24 +513,43 @@ bool Server::noticeServers(NetworkState& network, std::string message)
 //a retester
 void Server::remove_inactive_localUsers()
 {
-	for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin(); it != this->_localUsers.end(); ++it)
-	{
-		int fd = it->first;
-		LocalUser& localuser = it->second;
-		
-		std::time_t now = std::time(NULL);
-		if (now > localuser.timeout) // 1 min
-		{
-			std::stringstream ss;
-			ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " timed out" << "\r\n";
-			this->_localUsers[fd].wbuf += ss.str();
-			this->enable_epollout(fd);
-			this->write_client_fd(fd);
-			close(fd);
-			this->_localUsers.erase(fd);
-		}
-	}
+    std::time_t now = std::time(NULL);
+
+    for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin();
+         it != this->_localUsers.end(); )
+    {
+        int fd = it->first;
+        LocalUser& localuser = it->second;
+
+        if (localuser.timeout > 0 && now > localuser.timeout)
+        {
+            std::stringstream ss;
+            if (localuser.client->_registered)
+            {
+                ss << localuser.client->getUsername()
+                << " aka " << localuser.client->getNickname()
+                << " timed out\r\n";
+
+            }
+            else {
+                ss << "Disconnected: time out" << std::endl;
+            }
+
+            localuser.wbuf += ss.str();
+            this->enable_epollout(fd);
+            this->write_client_fd(fd);
+
+            close(fd);
+
+            this->_localUsers.erase(it++);   
+        }
+        else
+        {
+            ++it; 
+        }
+    }
 }
+
 
 //a retester
 void Server::check_localUsers_ping()
@@ -543,12 +562,12 @@ void Server::check_localUsers_ping()
 
         std::time_t now = std::time(NULL);
         
-        if (now - client.last_ping > 30) 
+        if (now - client.last_ping > PING_INTERVAL) 
         {
             std::stringstream ss;
             ss << "PING :" << now << "\r\n";
             client.wbuf += ss.str();
-            client.timeout = now + 60;
+            client.timeout = now + 3;
             this->enable_epollout(fd);
             client.last_ping = now;
             std::cout << format_time() << " [PING :" << now << "] sent to client " << fd << std::endl; 

@@ -28,6 +28,9 @@
 #include <map> 
 #include "Server_utils.h"
 
+#define PING_INTERVAL 5
+#define PING_TIMEOUT 3
+
 const int MAX_EVENTS = 64;	//Faire une taille dynamique (au fil de l'eau -> vecteur)
 							//Interet des bornes ? deinfe / global
 

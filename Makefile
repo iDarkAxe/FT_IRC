@@ -36,6 +36,8 @@ INC = \
 	InviteCommand.hpp \
 	NickCommand.hpp \
 	UserCommand.hpp \
+	PongCommand.hpp \
+	PrivmsgCommand.hpp \
 	Server_utils.h \
 	LocalUser.hpp \
 	Client.hpp \
@@ -55,6 +57,8 @@ SRC = \
 	PassCommand.cpp \
 	NickCommand.cpp \
 	UserCommand.cpp \
+	PongCommand.cpp \
+	PrivmsgCommand.cpp \
 	utils.cpp \
 	Server.cpp \
 	Client.cpp \
