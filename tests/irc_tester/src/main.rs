@@ -64,8 +64,8 @@ async fn main() -> Result<()> {
 
     stress_test(6667, 1000, 0).await?;
 
-    test_behaviors(6667, 15).await?;
-    advanced_stress_test(6667, 1000, 15).await?;
+    test_behaviors(6667, 20000).await?;
+    advanced_stress_test(6667, 1000, 20000).await?;
 
     //- tester le non bloquant (Bible et normal connection en meme temps)
     //- Overflow 2 fd
@@ -516,7 +516,7 @@ async fn run_client(port: u16, id: usize, behavior: ClientBehavior, timeout_ms: 
         ClientBehavior::LegitDisconnect => async {
             client.send("PASS password\r\n", 0).await?;
             client.send(&format!("NICK {}\r\n", nick), 0).await?;
-            client.send(&format!("USER {} 0 * :stress user\r\n", nick), 0).await?;
+            client.send(&format!("USER {} 0 * :LegitDisconnect\r\n", nick), 0).await?;
 
             if let Some(line) = client.read_line_timeout(timeout_ms).await? {
                 if !line.contains("successfully registered") {
@@ -530,7 +530,7 @@ async fn run_client(port: u16, id: usize, behavior: ClientBehavior, timeout_ms: 
         ClientBehavior::LegitIgnorePong => async {
             client.send("PASS password\r\n", 0).await?;
             client.send(&format!("NICK {}\r\n", nick), 0).await?;
-            client.send(&format!("USER {} 0 * :stress user\r\n", nick), 0).await?;
+            client.send(&format!("USER {} 0 * :LegitIgnorePong\r\n", nick), 0).await?;
 
             if let Some(line) = client.read_line_timeout(timeout_ms).await? {
                 if !line.contains("successfully registered") {
@@ -538,7 +538,7 @@ async fn run_client(port: u16, id: usize, behavior: ClientBehavior, timeout_ms: 
                 }
             }
             if let Some(kick) = client.read_line_timeout(timeout_ms).await? {
-                if kick.contains("SERVER KICK") {
+                if kick.contains("Disconnected: time out") {
                     return Ok(());
                 }
             }
@@ -547,14 +547,14 @@ async fn run_client(port: u16, id: usize, behavior: ClientBehavior, timeout_ms: 
 
         ClientBehavior::StartIgnoreAll => async {
             client.send("PASS password\r\n", 0).await?;
-            client.send(&format!("NICK {}\r\n", nick), 0).await?;
+            client.send(&format!("NICK {}_StartIgnoreAll\r\n", nick), 0).await?;
 
             if let Some(_) = client.read_line_timeout(timeout_ms).await? {
                 return Err(anyhow::anyhow!("Should not be welcomed"));
             }
 
             if let Some(kick) = client.read_line_timeout(timeout_ms).await? {
-                if kick.contains("SERVER KICK") {
+                if kick.contains("Disconnected: time out") {
                     return Ok(());
                 }
             }
@@ -562,12 +562,14 @@ async fn run_client(port: u16, id: usize, behavior: ClientBehavior, timeout_ms: 
         }.await,
 
         ClientBehavior::PongOnly => async {
+            client.send("PASS password\r\n", 0).await?;
+            client.send(&format!("NICK {}_Uncomplete_registered_pong\r\n", nick), 0).await?;
             loop {
                 if let Some(line) = client.read_line_timeout(timeout_ms).await? {
                     if line.starts_with("PING") {
                         let resp = line.replace("PING", "PONG");
                         client.send(&resp, 0).await?;
-                    } else if line.contains("SERVER KICK") {
+                    } else if line.contains("Disconnected: time out") {
                         return Ok(());
                     }
                 } else {
@@ -583,7 +585,7 @@ async fn run_client(port: u16, id: usize, behavior: ClientBehavior, timeout_ms: 
                     if line.starts_with("PING") {
                         let resp = line.replace("PING", "PONG");
                         client.send(&resp, 0).await?;
-                    } else if line.contains("SERVER KICK") {
+                    } else if line.contains("Disconnected: time out") {
                         return Ok(());
                     }
                 } else {
