@@ -101,27 +101,29 @@ void Server::disable_epollout(int fd)
 //to doc
 int Server::write_client_fd(int fd)
 {
-    std::string &wbuf = _localUsers[fd].wbuf;
+	std::string &wbuf = _localUsers[fd].wbuf;
 
-    while (!wbuf.empty()) {
-        ssize_t n = send(fd, wbuf.data(), wbuf.size(), 0);
+	while (!wbuf.empty()) {
+		ssize_t n = send(fd, wbuf.data(), wbuf.size(), 0);
 
-        if (n > 0) {
-            wbuf.erase(0, n);
-        }
-        else if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-            return 0;
-        }
-        else {
-            std::cerr << "send error on fd " << fd << "\n";
-            epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
-            close(fd);
-            _localUsers.erase(fd);
-            return -1;
-        }
-    }
-    this->disable_epollout(fd);
-    return 0;
+		if (n > 0) {
+			wbuf.erase(0, static_cast<size_t>(n));
+		}
+		//socket buffer full 
+		else if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+			return 0;
+		}
+		else {
+			// error or client disconnected
+			std::cerr << "send error on fd " << fd << "\n";
+			epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
+			close(fd);
+			_localUsers.erase(fd);
+			return -1;
+		}
+	}
+	this->disable_epollout(fd);
+	return 0;
 }
 
 int Server::init_epoll_event(int client_fd)
@@ -164,7 +166,9 @@ void Server::init_localuser(int client_fd)
     // the client object contains 
     Client* client = new Client(client_fd);
     c.client = client;
-    client->setLocalClient(&c);
+  	LocalUser &ref = this->_localUsers[client_fd];   
+		client->setLocalClient(&ref);
+		ref.client = client
     client->setUsername(""); // Mon check de registration implique que Username soit vide au depart. 
     this->_localUsers.insert(std::make_pair(client_fd, c));   
     //On maintient deux listes ?
@@ -368,6 +372,11 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
                 this->client_quited(fd);
                 continue;
             }
+          	//EPOLLOUT : We set that flag when we write in a client buffer, we need to send it
+			// if (evs & EPOLLOUT) {
+			// 	std::cout << "L'erreur est bien ici !" << fd << std::endl;
+			// 	Server::reply(this->_localUsers[fd].client, "je suis fou");
+			// }
             //EPOLLIN : There is data to read in the fd associated 
             if (evs & EPOLLIN) {
                 int result = this->read_client_fd(fd);
