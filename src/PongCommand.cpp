@@ -13,6 +13,6 @@ void PongCommand::execute(Client* executor, NetworkState& network)
   std::time_t now = std::time(NULL);
   executor->_localClient->timeout = now + 5;
   executor->_localClient->last_ping = now;
-  std::cout << format_time() << "Pong from client " << executor->_localClient->fd << "recieved" << std::endl; 
+  std::cout << format_time() << " Pong from client " << executor->_localClient->fd << " recieved" << std::endl; 
 }
 
