@@ -5,14 +5,15 @@ InviteCommand::InviteCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void InviteCommand::execute(Client* executor, NetworkState& network)
+void InviteCommand::execute(Client* executor, Server& server)
 {
 	if (_params.size() < 2) {
+		
 		// ERR_NEEDMOREPARAMS
 		return;
 	}
-	Client* target = network.getClient(_params[0]);
-	Channel* channel = network.getChannel(_params[1]);
+	Client* target = server.getNetwork().getClient(_params[0]);
+	Channel* channel = server.getNetwork().getChannel(_params[1]);
 	if (!target || !channel) {
 		// ERR_NOSUCHNICK
 		Debug::print(DEBUG, "Invalid params");

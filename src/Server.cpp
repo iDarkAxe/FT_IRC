@@ -22,6 +22,8 @@
 #include "ACommand.hpp"
 #include "CommandFactory.hpp"
 
+#include "InviteCommand.hpp"
+// TODO Juste pour le test de la factory
 std::string Server::_password = "";
 
 Server::~Server() {}
@@ -85,7 +87,7 @@ void Server::enable_epollout(int fd)
 	epoll_event ev;
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
 	ev.data.fd = fd;
-	epoll_ctl(this->_epfd, EPOLL_CTL_MOD, fd, &ev);
+	epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev);
 }
 
 void Server::disable_epollout(int fd)
@@ -93,7 +95,7 @@ void Server::disable_epollout(int fd)
 	epoll_event ev;
 	ev.events = EPOLLIN | EPOLLRDHUP;
 	ev.data.fd = fd;
-	epoll_ctl(this->_epfd, EPOLL_CTL_MOD, fd, &ev);
+	epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev);
 }
 
 int Server::write_client_fd(int fd)
@@ -293,6 +295,11 @@ std::string& Server::getPassword()
     return _password;
 }
 
+NetworkState& Server::getNetwork()
+{
+	return *(this->_networkState);
+}
+
 ACommand* Server::parse_command(int fd)
 {
     size_t pos;
@@ -426,6 +433,15 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 					if (this->_localUsers[fd].rbuf.find("\r\n") != std::string::npos) // si on a recu une ligne complete: -> À SUPPRIMER
 						Server::reply(this->_localUsers[fd].client, "Merci du message");
 					this->parse_command(fd);
+					std::vector<std::string> params;
+					// params.push_back("target_nick");
+					// params.push_back("channel_name");
+					ACommand* command = new InviteCommand(params);
+					if (command)
+					{
+						command->execute(this->_localUsers[fd].client, *this);
+						delete command;
+					}
 				}
 				// else : erreur de recv
 			}
@@ -500,8 +516,8 @@ bool Server::reply(Client* client, std::string message)
 		else {
 			// error or client disconnected
 			std::cerr << "[ERROR] Send error on fd " << client->getLocalClient()->fd << "\n";
-			epoll_ctl(this->_epfd, EPOLL_CTL_DEL, client->getLocalClient()->fd, NULL);
-			this->_networkState->removeClient(client->getNickname());
+			epoll_ctl(_epfd, EPOLL_CTL_DEL, client->getLocalClient()->fd, NULL);
+			_networkState->removeClient(client->getNickname());
 			close(client->getLocalClient()->fd);
 			_localUsers.erase(client->getLocalClient()->fd);
 			return false;

@@ -12,7 +12,7 @@ protected:
 public:
 	TopicCommand(std::vector<std::string> params);
 	~TopicCommand() {};
-	void execute(Client* executor, NetworkState& network);
+	void execute(Client* executor, Server& server);
 };
 
 #endif // TOPIC_COMMAND_HPP

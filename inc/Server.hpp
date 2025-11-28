@@ -32,6 +32,8 @@
 const int MAX_EVENTS = 64;	//Faire une taille dynamique (au fil de l'eau -> vecteur)
 							//Interet des bornes ? deinfe / global
 
+class ACommand;
+
 class Server {
 private:
 	int _port;
@@ -64,6 +66,7 @@ public:
 	std::string get_command(std::string line);
 	std::vector<std::string> get_params(std::string line);
 	static std::string& getPassword();
+	NetworkState& getNetwork();
 
 	Server(int port, std::string password);
 	~Server();

@@ -4,8 +4,10 @@
 #include <iostream>
 #include <vector>
 #include "Client.hpp"
-#include "NetworkState.hpp"
+#include "Server.hpp"
 #include "Debug.hpp"
+
+class Server;
 
 enum command_type
 {
@@ -41,7 +43,7 @@ protected:
 //= Methods =//
 public:
 	virtual ~ACommand() {}
-	virtual void execute(Client* executor, NetworkState& network) = 0;
+	virtual void execute(Client* executor, Server& server) = 0;
 	virtual void print_params() const
 	{
 		std::cout << "Command parameters:" << std::endl;

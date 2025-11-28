@@ -12,7 +12,7 @@ protected:
 public:
 	JoinCommand(std::vector<std::string> params);
 	~JoinCommand() {};
-	void execute(Client* executor, NetworkState& network);
+	void execute(Client* executor, Server& server);
 };
 
 #endif // JOIN_COMMAND_HPP

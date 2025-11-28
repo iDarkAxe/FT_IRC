@@ -9,14 +9,14 @@ JoinCommand::JoinCommand(std::vector<std::string> params)
 // TODO: ERR_TOOMANYCHANNELS and ERR_UNAVAILRESOURCE and ERR_BADCHANMASK ??
 // TODO: ban handling : ERR_BANNEDFROMCHAN
 
-void JoinCommand::execute(Client* executor, NetworkState& network)
+void JoinCommand::execute(Client* executor, Server& server)
 {
 	if (_params.size() < 1) {
 		// ERR_NEEDMOREPARAMS
 		return;
 	}
 	(void)executor;
-	(void)network;
+	(void)server;
 	if (_params[0] == "0")
 	{
 		// Executor wants to leave all channels
@@ -44,11 +44,11 @@ void JoinCommand::execute(Client* executor, NetworkState& network)
 			chan_key = channel_keys[i];
 		else
 			chan_key = "";
-		channel = network.getChannel(channel_names[i]);
+		channel = server.getNetwork().getChannel(channel_names[i]);
 		if (!channel)
 		{
-			network.addChannel(channel_names[i]);
-			channel = network.getChannel(channel_names[i]);
+			server.getNetwork().addChannel(channel_names[i]);
+			channel = server.getNetwork().getChannel(channel_names[i]);
 			channel->addClient(executor, true); // First user is operator
 			continue;
 		}

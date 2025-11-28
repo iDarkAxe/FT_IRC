@@ -5,13 +5,13 @@ TopicCommand::TopicCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void TopicCommand::execute(Client* executor, NetworkState& network)
+void TopicCommand::execute(Client* executor, Server& server)
 {
 	if (_params.size() < 2) {
 		// ERR_NEEDMOREPARAMS
 		return;
 	}
-	Channel* channel = network.getChannel(_params[0]);
+	Channel* channel = server.getNetwork().getChannel(_params[0]);
 	if (!channel) {
 		// ERR_NOSUCHCHANNEL
 		return;
