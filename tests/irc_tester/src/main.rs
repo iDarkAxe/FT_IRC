@@ -25,6 +25,8 @@ async fn main() -> Result<()> {
     let port = 6667;
     let debug = false;
 
+    //random noise
+    // random_noise().await?;
     normal_connection(port, debug).await?;
 
     //faux mot passe

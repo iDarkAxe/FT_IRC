@@ -338,7 +338,8 @@ void Server::interpret_msg(int fd)
         this->_localUsers[fd].rbuf.erase(0, pos + 2);
         ACommand* cmd = this->parse_command(line);      
         //try catch ?
-        cmd->execute(this->_localUsers[fd].client, *this->_networkState);
+        if (cmd)
+            cmd->execute(this->_localUsers[fd].client, *this->_networkState);
     }
     this->_localUsers[fd].last_ping = std::time(NULL);
     this->is_authentification_complete(fd);
