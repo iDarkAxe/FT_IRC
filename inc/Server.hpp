@@ -34,11 +34,13 @@
 const int MAX_EVENTS = 64;	//Faire une taille dynamique (au fil de l'eau -> vecteur)
 							//Interet des bornes ? deinfe / global
 
+class ACommand;
+
 class Server {
 private:
 	int _port;
 	std::vector<int> _localUsers_fd;
-	static std::string _password;
+	std::string _password;
 	std::map<int, LocalUser> _localUsers;
 	int _server_socket;
 	int _epfd;
@@ -48,11 +50,7 @@ private:
 public:
 	Server(int port, std::string password);
 	~Server();
-	static std::string& getPassword();
-	int getEpfd() const;
-	void removeLocalUser(int fd);
-	// int getPort() const;
-	// int checkPassword();
+	std::string& getPassword();
 	void RunServer();
 	int init_network(NetworkState &networkState);
 	int init_socket(int port);
@@ -64,11 +62,12 @@ public:
 	void enable_epollout(int fd);
 	void disable_epollout(int fd);
 	int write_client_fd(int fd);
-
+	int getEpfd() const;
 
 	//Clients managing
 	void handle_events(int n, epoll_event events[MAX_EVENTS]);
 	void new_client(int server_fd);
+	void removeLocalUser(int fd);
 	void client_quited(int fd); // leaved plutot que quited
 	void send_welcome(int fd);
 	void remove_inactive_localUsers();
@@ -80,11 +79,12 @@ public:
 	std::vector<std::string> get_params(std::string line);
 	void is_authentification_complete(int fd);
 	void interpret_msg(int fd);
+	NetworkState& getNetwork();
 
 	//Reply
 	bool reply(Client* client, std::string message);
-	bool replyChannel(Channel& channel, std::string message);
-	bool replyChannelOnlyOP(Channel& channel, std::string message);
+	bool replyChannel(Channel* channel, std::string message);
+	bool replyChannelOnlyOP(Channel* channel, std::string message);
 	bool broadcast(NetworkState&, std::string message);
 	bool noticeServers(NetworkState&, std::string message);
 

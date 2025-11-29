@@ -7,14 +7,12 @@ PassCommand::PassCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void PassCommand::execute(Client* executor, NetworkState& network, Server& server)
+void PassCommand::execute(Client* executor, Server& server)
 {
-	(void)network;
+	std::vector<int> vec;
 
-	if (_params.empty() || _params[1].empty())
-	{
-		//461 // ERR_NEEDMOREPARAMS
-	}
+	if (_params.empty() || _params[0].empty())
+		vec.push_back(461); // ERR_NEEDMOREPARAMS
 	if (executor->_registered)
 		//462 // ERR_ALREADYREGISTRED
 
@@ -23,7 +21,7 @@ void PassCommand::execute(Client* executor, NetworkState& network, Server& serve
 		return;
 	}
 
-	if (_params[1] == Server::getPassword())
+	if (_params[0] == server.getPassword())
 	{
 		// std::cout << "Correct password" << std::endl;
 	  executor->_password_correct = true;

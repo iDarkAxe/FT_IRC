@@ -4,8 +4,11 @@
 #include <iostream>
 #include <vector>
 #include "Client.hpp"
-#include "NetworkState.hpp"
+#include "Server.hpp"
 #include "Debug.hpp"
+#include "Reply.hpp"
+
+class Server;
 
 class Server;
 
@@ -13,7 +16,7 @@ enum command_type
 {
 	INVITE,
 	KICK,
-	CHANGE_TOPIC,
+	TOPIC,
 	MODE,
 	NICK,
 	USER,
@@ -43,16 +46,9 @@ protected:
 
 //= Methods =//
 public:
-	virtual ~ACommand() {}
-	virtual void execute(Client* executor, NetworkState& network, Server& server) = 0;
-	virtual void print_params() const
-	{
-		std::cout << "Command parameters:" << std::endl;
-		for (size_t i = 0; i < _params.size(); ++i)
-		{
-			std::cout << "Param " << i << ": " << _params[i] << std::endl;
-		}
-	}
+	virtual ~ACommand();
+	virtual void execute(Client* executor, Server& server) = 0;
+	virtual void print_params() const;
 };
 
 #endif  // ACOMMAND_HPP
