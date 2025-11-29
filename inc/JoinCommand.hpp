@@ -11,7 +11,7 @@ protected:
 //= Methods =//
 public:
 	JoinCommand(std::vector<std::string> params);
-	~JoinCommand() {};
+	~JoinCommand() {}
 	void execute(Client* executor, Server& server);
 };
 

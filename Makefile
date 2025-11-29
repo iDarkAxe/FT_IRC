@@ -32,9 +32,14 @@ INC = \
 	utils.hpp \
 	ACommand.hpp \
 	CommandFactory.hpp \
+	PassCommand.hpp \
 	InviteCommand.hpp \
 	TopicCommand.hpp \
 	JoinCommand.hpp \
+	NickCommand.hpp \
+	UserCommand.hpp \
+	PongCommand.hpp \
+	PrivmsgCommand.hpp \
 	Server_utils.h \
 	LocalUser.hpp \
 	Client.hpp \
@@ -54,12 +59,18 @@ SRC = \
 	InviteCommand.cpp \
 	TopicCommand.cpp \
 	JoinCommand.cpp \
+	PassCommand.cpp \
+	NickCommand.cpp \
+	UserCommand.cpp \
+	PongCommand.cpp \
+	PrivmsgCommand.cpp \
 	utils.cpp \
 	Server.cpp \
 	Client.cpp \
 	NetworkState.cpp \
 	Channel.cpp \
-	Server_utils.cpp 
+	Server_utils.cpp \
+	ACommand.cpp \
 
 LIBS = \
 

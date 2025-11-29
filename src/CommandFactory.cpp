@@ -2,14 +2,15 @@
 #include "InviteCommand.hpp"
 #include "JoinCommand.hpp"
 #include "TopicCommand.hpp"
+#include "PassCommand.hpp"
+#include "NickCommand.hpp"
+#include "UserCommand.hpp"
+#include "PongCommand.hpp"
+#include "PrivmsgCommand.hpp"
 
 CommandFactory::CommandFactory() {}
 CommandFactory::~CommandFactory() {}
 
-CommandFactory& CommandFactory::getInstance() {
-	static CommandFactory instance;
-	return instance;
-}
 
 command_type CommandFactory::findType(std::string const& command_name) {
     if (command_name == "INVITE") return INVITE;
@@ -25,8 +26,11 @@ command_type CommandFactory::findType(std::string const& command_name) {
 	if (command_name == "PRIVATE_MESSAGE") return PRIVATE_MESSAGE;
 	if (command_name == "LIST_CHANNELS") return LIST_CHANNELS;
 	if (command_name == "LIST_USERS") return LIST_USERS;
+	if (command_name == "PONG") return PONG;
     return UNKNOWN;
 }
+
+// TODO: enum LEAVE, SEND_MESSAGE, LIST_CHANNELS, LIST_USERS, KICK, MODE
 
 ACommand* CommandFactory::createCommand(const std::string& command, const std::vector<std::string> &params)
 {
@@ -39,24 +43,18 @@ ACommand* CommandFactory::createCommand(const std::string& command, const std::v
 			return new TopicCommand(params);
 		case JOIN:
 			return new JoinCommand(params);
-		// case KICK:
-		// 	return new KickCommand(params);
-		// case MODE:
-		// 	return new ModeCommand(params);
-		// case NICK:
-		// 	return new SetNickCommand(params);
-		// case USER:
-		// 	return new SetUsernameCommand(params);
-		// case PASS:
-		// 	return new PasswordCommand(params);
-		// case LEAVE:
-		// 	return new LeaveCommand(params);
-		// case SEND_MESSAGE:
-		// 	return new SendMessageCommand(params);
-		// case PRIVATE_MESSAGE:
-		// 	return new PrivateMessageCommand(params);
+		case NICK:
+			return new NickCommand(params);
+		case USER:
+			return new UserCommand(params);
+		case PASS:
+			return new PassCommand(params);
+		case PRIVATE_MESSAGE:
+			return new PrivmsgCommand(params);
+		case PONG:
+			return new PongCommand(params);
 		case UNKNOWN:
 		default:
-			return 0;
+			return NULL;
 	}
 }

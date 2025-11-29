@@ -1,5 +1,4 @@
 #include <sys/types.h>
-#include <climits>
 #include <sstream>
 #include <ctime>
 #include <fcntl.h>
@@ -22,16 +21,11 @@
 #include "ACommand.hpp"
 #include "CommandFactory.hpp"
 
-#include "InviteCommand.hpp"
-// TODO Juste pour le test de la factory
-std::string Server::_password = "";
-
 Server::~Server() {}
 
 Server::Server(int port, std::string password) :  _port(port) 
 {
-    welcomed = 0;
-    _password = password;
+	_password = password;
 }
 
 int Server::init_network(NetworkState &networkState)
@@ -82,6 +76,8 @@ int Server::init_socket(int port) {
 	return this->_server_socket;
 }
 
+//When we want to write in a socket, using this function will trigger epoll_wait
+//and lead us to write_client_fd
 void Server::enable_epollout(int fd)
 {
 	epoll_event ev;
@@ -90,6 +86,8 @@ void Server::enable_epollout(int fd)
 	epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev);
 }
 
+//When we wrote in client fd, we don't want epoll_wait to be triggered to write again,
+//we switch off the flag EPOLLOUT
 void Server::disable_epollout(int fd)
 {
 	epoll_event ev;
@@ -98,6 +96,7 @@ void Server::disable_epollout(int fd)
 	epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev);
 }
 
+//to doc
 int Server::write_client_fd(int fd)
 {
 	std::string &wbuf = _localUsers[fd].wbuf;
@@ -125,61 +124,80 @@ int Server::write_client_fd(int fd)
 	return 0;
 }
 
-void Server::new_client(int server_fd) {
-    while (true) {
-        //while we can register a new client we do so
-        int client_fd = accept(server_fd, NULL, NULL);
-        if (client_fd < 0) {
-            //avoid blocking epoll : in case there is no more client to accept
-            if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
-            if (errno == EMFILE || errno == ENFILE) {
-                std::cerr << "TOO MANY FILE DESCRIPTORS!" << std::endl;
-            }
-            perror("accept");
-            break;
-        }
-        make_nonblocking(client_fd);
+int Server::init_epoll_event(int client_fd)
+{
+	//Necessaire ?
+	make_nonblocking(client_fd);
 
-		epoll_event cev;
-		std::memset(&cev, 0, sizeof(cev));
-		//we set en epoll_event, triggered in case of data to read or
-		//if client close its writing end (fragmented msgs)
-		cev.events = EPOLLIN | EPOLLRDHUP;
-		//we bind this new client event struct, with the client fd
-		cev.data.fd = client_fd;
-		//adding our new fd, and the event struct to our epoll, with the events we just set
-		if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, client_fd, &cev) < 0) {
-			perror("epoll_ctl add client");
-			close(client_fd);
-			continue;
+	//each client registered in epoll_ctl must have an event struct associated
+	epoll_event cev;
+	std::memset(&cev, 0, sizeof(cev));
+	//theses flags define what we want to trigger epoll_wait :
+	//In case of data to read or
+	//if client closed its writing end (fragmented msgs)
+	cev.events = EPOLLIN | EPOLLRDHUP;
+	//we bind this new client event struct, with the client fd
+	cev.data.fd = client_fd;
+	//adding our new fd, and the event struct to our epoll, with the events we just set
+	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, client_fd, &cev) < 0) {
+		perror("epoll_ctl add client");
+		close(client_fd);
+		return 1;
+	}
+	return 0;
+
+}
+
+void Server::init_localuser(int client_fd)
+{
+	//since we added a client in our epoll, we need a struct to represent it on our server
+	//LocalUser contains the pipes and tools, Client contains its server infos
+	LocalUser c;
+	//the fd makes the link between epoll and our list of client 
+	c.fd = client_fd;
+	//for non blocking or overlap situations, we need 2 I/O buffers for each client
+	c.rbuf = "";  
+	c.wbuf = "";
+	//we want to kick incactives clients
+	c.last_ping = std::time(NULL);
+	c.timeout = -1;
+	// the client object contains 
+	Client* client = new Client(client_fd);
+	c.client = client;
+	this->_localUsers.insert(std::make_pair(client_fd, c));   
+  	LocalUser &ref = this->_localUsers[client_fd];   
+	client->setLocalClient(&ref);
+	ref.client = client;
+	client->setUsername(""); // Mon check de registration implique que Username soit vide au depart. 
+	//On maintient deux listes ?
+	this->_networkState->addClient("", client);
+	std::cout << format_time() << " New client: " << client_fd << std::endl;
+}
+
+//for each call to accept with our server fd, if there is a client to register, it will returns a > 0 fd
+//We register all clients available with the true loop, and break only in case of error, or when there is no client to register
+void Server::new_client(int server_fd) {
+	while (true) {
+		int client_fd = accept(server_fd, NULL, NULL);
+		if (client_fd < 0) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK)
+				break;
+			if (errno == EMFILE || errno == ENFILE) {
+				std::cerr << "TOO MANY FILE DESCRIPTORS!" << std::endl;
+			}
+			perror("accept");
+			break;
 		}
-		//Deviendra une classe ? Une struct suffit ici
-		//faire une init pour chaque struct objet
-		LocalUser c;
-		c.fd = client_fd;
-		c.rbuf = "";  
-		c.wbuf = "";
-		c.last_ping = std::time(NULL);
-		c.timeout = LONG_MAX; // 1min pour repondre PONG
-		Client* client = new Client(client_fd);
-		c.client = client;
-		client->setNickname("Random");
-		// si localUsers.insert a foire, gerer la collision ?
-		// use make pair to use the fd as key and the client struct as data
-		this->_localUsers.insert(std::make_pair(client_fd, c));
-		LocalUser &ref = this->_localUsers[client_fd];   
-		client->setLocalClient(&ref);
-		ref.client = client;
-		this->_networkState->addClient("", client); // adding client to network state
-		std::cout << format_time() << " New client: " << client_fd << std::endl;
+		if (init_epoll_event(client_fd))
+			continue;
+		init_localuser(client_fd);
 	}
 }
 
-void Server::client_quited(int fd) // leaved plutot que quited
+void Server::client_quited(int fd)
 {
 	std::cout << "Remote closed: " << fd << std::endl;
-	//we remove the leaving client fd, and the event struct associated
+	//we must stop track this fd with our epoll
 	epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 	//we delete in our map the leaving client
@@ -188,80 +206,35 @@ void Server::client_quited(int fd) // leaved plutot que quited
 
 void Server::send_welcome(int fd)
 {
-    std::stringstream ss;
-    ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully registered" << "\r\n";
-    this->_localUsers[fd].wbuf += ss.str();
-    this->enable_epollout(fd);
-    this->write_client_fd(fd);
-    this->welcomed += 1;
-    std::cout << "welcomed = " << this->welcomed << std::endl;
-}
-
-void Server::remove_inactive_localUsers()
-{
-	for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin(); it != this->_localUsers.end(); ++it)
-	{
-		int fd = it->first;
-		LocalUser& localuser = it->second;
-		
-		std::time_t now = std::time(NULL);
-		if (now > localuser.timeout) // 1 min
-		{
-			std::stringstream ss;
-			ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " timed out" << "\r\n";
-			this->_localUsers[fd].wbuf += ss.str();
-			this->enable_epollout(fd);
-			this->write_client_fd(fd);
-			close(fd);
-			this->_localUsers.erase(fd);
-		}
-	}
-}
-
-void Server::check_localUsers_ping()
-{
-	for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin(); 
-		it != this->_localUsers.end(); ++it)
-	{
-		int fd = it->first;
-		LocalUser& client = it->second;
-
-		std::time_t now = std::time(NULL);
-		
-		if (now - client.last_ping > 30) 
-		{
-			std::stringstream ss;
-			ss << "PING :" << now << "\r\n";
-			client.wbuf += ss.str();
-			client.timeout = now + 60;
-			this->enable_epollout(fd);
-			client.last_ping = now;
-			std::cout << format_time() << " [PING :" << now << "] sent to client " << fd << std::endl; 
-		}
-	}
+	std::stringstream ss;
+	ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully registered" << "\r\n";
+	this->_localUsers[fd].wbuf += ss.str();
+	this->enable_epollout(fd);
+	this->write_client_fd(fd);
 }
 
 std::string Server::get_command(std::string line) 
 {
-    size_t pos = line.find(' ');
-    if (pos == std::string::npos) {
-        return line;
-    }
-    return line.substr(0, pos);
+	size_t pos = line.find(' ');
+	if (pos == std::string::npos) {
+		return line;
+	}
+	return line.substr(0, pos);
 }
 
 std::vector<std::string> Server::get_params(std::string line)
 {
-    std::vector<std::string> params;
-    
-    size_t pos = line.find(' ');
-    
-    if (pos == std::string::npos) {
-        return params;
-    }
+	std::vector<std::string> params;
+	std::string last_param;
+	
+	size_t pos = line.find(' ');
+	
+	if (pos == std::string::npos) {
+		return params;
+	}
 
-    std::string remaining = line.substr(pos + 1);
-    std::string after_colon;
+	std::string remaining = line.substr(pos + 1);
+	std::string after_colon;
 	bool has_colon = remaining.find(':') != std::string::npos;
 	if (has_colon) {
 		size_t colon_pos = remaining.find(':');
@@ -280,7 +253,7 @@ std::vector<std::string> Server::get_params(std::string line)
 
 std::string& Server::getPassword()
 {
-    return _password;
+	return this->_password;
 }
 
 NetworkState& Server::getNetwork()
@@ -288,86 +261,94 @@ NetworkState& Server::getNetwork()
 	return *(this->_networkState);
 }
 
-ACommand* Server::parse_command(int fd)
+ACommand* Server::parse_command(std::string line)
 {
-    size_t pos;
-    while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) { // TODO: pourquoi while ?
-        std::string line = this->_localUsers[fd].rbuf.substr(0, pos);
-        this->_localUsers[fd].rbuf.erase(0, pos + 2);
-        
-        std::cout << "Processing: [" << line << "]" << std::endl;
+	std::cout << "Processing: [" << line << "]" << std::endl;
 
-        std::string cmd = this->get_command(line);
-        if (cmd.empty())
-            return NULL;
-        // std::cout << "CMD = " << cmd << std::endl;
-        std::vector<std::string> params = this->get_params(line);
-		for(size_t i = 0; i < params.size(); ++i) {
-			std::cout << "PARAM[" << i << "] = " << params[i] << std::endl;
-		}
-        return CommandFactory::createCommand(cmd, params);
-		/*
-		// TODO: pertinence ?
-        this->_localUsers[fd].last_ping = std::time(NULL);
-
-        if (!this->_localUsers[fd].client->_registered && 
-            this->_localUsers[fd].client->_password_correct == true && 
-            this->_localUsers[fd].client->getNickname() != "" && 
-            this->_localUsers[fd].client->getUsername() != "") {
-            
-            this->send_welcome(fd);
-            this->_localUsers[fd].client->_registered = true;
-            std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
-        }*/
-    }
-    return NULL;
+	std::string cmd = this->get_command(line);
+	if (cmd.empty())
+		return NULL;
+	// std::cout << "CMD = " << cmd << std::endl;
+	std::vector<std::string> params = this->get_params(line);
+	// for(size_t i = 0; i < params.size(); ++i) {
+	// 	std::cout << "PARAM[" << i << "] = " << params[i] << std::endl;
+	// }
+	return CommandFactory::createCommand(cmd, params);
 }
 
 //returns 1 to send a buff in parsing
-//returns 2 to wait more data in case of EAGAIN / EWOULDBLOCK
 //returns 0 in case of client disconnection
 //returns -1 in case of error
 int Server::read_client_fd(int fd)
 {
-    char buf[4096];
-    
-    // MSG_DONTWAIT : rend non bloquant et suffisant ?
-    ssize_t r = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
-    
-    if (this->_localUsers[fd].rbuf.size() >= 512) {
-        //On peut envoyer un message "not allowed msg > 512"
+	char buf[4096];
+	
+	// MSG_DONTWAIT : rend non bloquant et suffisant ?
+	ssize_t r = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
+	
+	if (this->_localUsers[fd].rbuf.size() >= 512) {
+		//On peut envoyer un message "not allowed msg > 512"
 
-        //si on veut traiter les 512 premiers octets il faut read ici 
+		//si on veut traiter les 512 premiers octets il faut read ici 
 
-        std::cerr << "Buffer limit reached for fd " << fd << ", cleaning buffer" << std::endl;
-        this->_localUsers[fd].rbuf.clear();
-        return 0; //1 si on veut lire et traiter les 512 premiers octets
-    }
+		std::cerr << "Buffer limit reached for fd " << fd << ", cleaning buffer" << std::endl;
+		this->_localUsers[fd].rbuf.clear();
+		return 0; //1 si on veut lire et traiter les 512 premiers octets
+	}
 
-    if (r > 0) {
-        this->_localUsers[fd].rbuf.append(buf, buf + r); // &buf[r]
-        // std::cout << "Received " << r << " bytes from fd " << fd << std::endl;
-        return 1;
-        
-    } else if (r == 0) {
-        std::cout << "Client " << fd << " disconnected" << std::endl;
-        epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
-        close(fd);
-        this->_localUsers.erase(fd);
-        return 0;
-    } else {
-        //error handling : ici il faut que le parsing attende !
-        //Ces flags sont importants si on utilise EPOLET, sans, c'est peut etre superflu
-        // if (errno == EAGAIN || errno == EWOULDBLOCK) {
-        //     return 2; // 1 -> 2
-        // } else {
-            perror("recv");
-            epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
-            close(fd);
-            this->_localUsers.erase(fd);
-            return -1;
-        // }
-    }
+	if (r > 0) {
+		this->_localUsers[fd].rbuf.append(buf, buf + r); // &buf[r]
+		// std::cout << "Received " << r << " bytes from fd " << fd << std::endl;
+		return 1;
+		
+	} else if (r == 0) {
+		std::cout << "Client " << fd << " disconnected" << std::endl;
+		epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
+		close(fd);
+		this->_localUsers.erase(fd);
+		return 0;
+	} else {
+		//error handling : ici il faut que le parsing attende !
+		//Ces flags sont importants si on utilise EPOLET, sans, c'est peut etre superflu
+		// if (errno == EAGAIN || errno == EWOULDBLOCK) {
+		//     return 2; // 1 -> 2
+		// } else {
+			perror("recv");
+			epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
+			close(fd);
+			this->_localUsers.erase(fd);
+			return -1;
+		// }
+	}
+}
+
+//a mettre en bas de PASS USER et NICK uniquement
+void Server::is_authentification_complete(int fd)
+{
+	if (!this->_localUsers[fd].client->_registered && 
+		this->_localUsers[fd].client->_password_correct == true && 
+		this->_localUsers[fd].client->getNickname() != "" && 
+		this->_localUsers[fd].client->getUsername() != "") {
+		
+		this->send_welcome(fd);
+		this->_localUsers[fd].client->_registered = true;
+		std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
+	}
+}
+
+void Server::interpret_msg(int fd)
+{
+	size_t pos;
+	while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) {
+		std::string line = this->_localUsers[fd].rbuf.substr(0, pos);
+		this->_localUsers[fd].rbuf.erase(0, pos + 2);
+		ACommand* cmd = this->parse_command(line);      
+		//try catch ?
+		if (cmd)
+			cmd->execute(this->_localUsers[fd].client, *this);
+	}
+	this->_localUsers[fd].last_ping = std::time(NULL);
+	this->is_authentification_complete(fd);
 }
 
 void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
@@ -393,10 +374,10 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 				this->client_quited(fd);
 				continue;
 			}
-			//EPOLLOUT : We set that flag when we write in a client buffer, we need to send it
+		  	//EPOLLOUT : We set that flag when we write in a client buffer, we need to send it
 			// if (evs & EPOLLOUT) {
 			// 	std::cout << "L'erreur est bien ici !" << fd << std::endl;
-			// 	Server::reply(this->_localUsers[fd].client, "je suis fou");
+			// 	Server::reply(this->_localUsers[fd].client, "");
 			// }
 			//EPOLLIN : There is data to read in the fd associated 
 			if (evs & EPOLLIN) {
@@ -404,19 +385,22 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 				// 0 = client disconnected
 				if (result == 0) {
 					continue;
-				} else if (result == 1 ){
-					ACommand* command = this->parse_command(fd);
-					if (!command)
-						continue;
-					command->execute(this->_localUsers[fd].client, *this);
-					delete command;
+				} else if (result == 1 ) {
+					interpret_msg(fd);
+				} else if (result < 0) {
+					//error handling
 				}
-				// else : erreur de recv
+			}
+			//EPOLLOUT : We set that flag when we write in a client buffer, we need to send it
+			if (evs & EPOLLOUT) {
+				if (this->write_client_fd(fd) < 0)
+					continue;
 			}
 		}
 	}
 }
 
+//revoir ici max event et la logique
 void Server::RunServer() {
 
 	this->_server_socket = init_socket(this->_port);
@@ -442,7 +426,7 @@ void Server::RunServer() {
 
 	while (true) {
 		//we check for events from our localUsers fd registered
-		int n = epoll_wait(this->_epfd, events, MAX_EVENTS, 2000); //timeout 2 sec -> revoir la gestion du timeout : retour de fct / teste evs
+		int n = epoll_wait(this->_epfd, events, MAX_EVENTS, 2000); //timeout 2 sec 
 		if (n < 0) {
 			// if (errno == EINTR)
 			//   continue; // signal interrompt -> relancer
@@ -450,13 +434,14 @@ void Server::RunServer() {
 			break;
 		}
 		handle_events(n, events);
-		this->check_localUsers_ping(); //si on n'a pas eu de signe d'activite depuis trop longtemps
-		this->remove_inactive_localUsers(); // remove inactive localUsers after a unanswered ping
+		// this->check_localUsers_ping(); //si on n'a pas eu de signe d'activite depuis trop longtemps
+		// this->remove_inactive_localUsers(); // remove inactive localUsers after a unanswered ping
 	}
 	close(this->_server_socket);
 	close(this->_epfd);
 }
 
+//on mettrait pas le timestamp dans le debug aussi ?
 bool Server::reply(Client* client, std::string message)
 {
 	if (!client)
@@ -546,3 +531,69 @@ bool Server::noticeServers(NetworkState& network, std::string message)
 	std::cout << "Notice servers: " << message << std::endl;
 	return true;
 }
+
+//a retester
+void Server::remove_inactive_localUsers()
+{
+	std::time_t now = std::time(NULL);
+
+	for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin();
+		 it != this->_localUsers.end(); )
+	{
+		int fd = it->first;
+		LocalUser& localuser = it->second;
+
+		if (localuser.timeout > 0 && now > localuser.timeout)
+		{
+			std::stringstream ss;
+			if (localuser.client->_registered)
+			{
+				ss << localuser.client->getUsername()
+				<< " aka " << localuser.client->getNickname()
+				<< " timed out\r\n";
+
+			}
+			else {
+				ss << "Disconnected: time out" << std::endl;
+			}
+
+			localuser.wbuf += ss.str();
+			this->enable_epollout(fd);
+			this->write_client_fd(fd);
+
+			close(fd);
+
+			this->_localUsers.erase(it++);   
+		}
+		else
+		{
+			++it; 
+		}
+	}
+}
+
+
+//a retester
+void Server::check_localUsers_ping()
+{
+	for (std::map<int, LocalUser>::iterator it = this->_localUsers.begin(); 
+		 it != this->_localUsers.end(); ++it)
+	{
+		int fd = it->first;
+		LocalUser& client = it->second;
+
+		std::time_t now = std::time(NULL);
+		
+		if (now - client.last_ping > PING_INTERVAL) 
+		{
+			std::stringstream ss;
+			ss << "PING :" << now << "\r\n";
+			client.wbuf += ss.str();
+			client.timeout = now + 3;
+			this->enable_epollout(fd);
+			client.last_ping = now;
+			std::cout << format_time() << " [PING :" << now << "] sent to client " << fd << std::endl; 
+		}
+	}
+}
+

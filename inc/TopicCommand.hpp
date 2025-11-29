@@ -11,7 +11,7 @@ protected:
 //= Methods =//
 public:
 	TopicCommand(std::vector<std::string> params);
-	~TopicCommand() {};
+	~TopicCommand() {}
 	void execute(Client* executor, Server& server);
 };
 
