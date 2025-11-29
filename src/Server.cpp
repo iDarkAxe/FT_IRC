@@ -194,10 +194,10 @@ void Server::init_localuser(int client_fd)
     client->setUsername(""); // Mon check de registration implique que Username soit vide au depart. 
 	ref.client = client;
     this->_networkState->addClient("", client);
-    std::cout << format_time() << " New client: " << client_fd << std::endl;
- //    std::stringstream ss;
- //    ss << " New client: " << client_fd;
-	// Debug::print(DEBUG, ss);
+    // std::cout << format_time() << " New client: " << client_fd << std::endl;
+    std::stringstream ss;
+    ss << " New client: " << client_fd;
+	Debug::print(DEBUG, ss.str());
 }
 
 //for each call to accept with our server fd, if there is a client to register, it will returns a > 0 fd
@@ -415,7 +415,7 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
                 // std::cerr << "EPOLLERR/HUP on fd " << fd << std::endl;
                 std::stringstream ss;
                 ss << "EPOLLERR/HUP on fd " << fd;
-		        Debug::print(ERROR, ss);
+		        Debug::print(ERROR, ss.str());
                 this->client_quited(fd);
                 continue;
             }
