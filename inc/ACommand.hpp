@@ -10,8 +10,6 @@
 
 class Server;
 
-class Server;
-
 enum command_type
 {
 	INVITE,
