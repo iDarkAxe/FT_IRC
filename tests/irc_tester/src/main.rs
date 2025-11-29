@@ -6,6 +6,7 @@ use std::time::Instant;
 use tokio::time::{Duration, timeout};
 
 mod client;
+use std::env;
 use crate::client::Client;
 use crate::client::ClientBehavior;
 
@@ -24,6 +25,8 @@ struct ClientResult {
 #[tokio::main]
 async fn main() -> Result<()> {
     let port = 6667;
+    let args: Vec<String> = env::args().collect();
+    let num_clients: usize = args[1].parse().expect("Argument must be a positive integer");
     // let debug = false;
 
     //random noise
@@ -66,8 +69,8 @@ async fn main() -> Result<()> {
     // -- parrallele --
 
     // test_behaviors(port, 20000).await?;
-    connection_stress_test(port, 900, 0).await?;
-    advanced_stress_test(port, 700, 0).await?;
+    connection_stress_test(port, num_clients, 0).await?;
+    advanced_stress_test(port, num_clients, 0).await?;
 
     //- tester le non bloquant (Bible et normal connection en meme temps)
     //- Overflow 2 fd
@@ -194,8 +197,8 @@ async fn connection_stress_test(port: u16, num_clients: usize, timeout_ms: u64) 
         });
         handles.push(handle);
     }
-    let spawn_duration = start.elapsed();
-    println!("All tasks spawned in: {:?}", spawn_duration);
+    // let spawn_duration = start.elapsed();
+    // println!("All tasks spawned in: {:?}", spawn_duration);
 
     let mut ok_count = 0;
     let mut ko_count = 0;
@@ -213,7 +216,7 @@ async fn connection_stress_test(port: u16, num_clients: usize, timeout_ms: u64) 
         ok_count, ko_count
     );
     println!("Total time: {:?}", total_duration);
-    println!("Time per client: {:?}", total_duration / num_clients as u32);
+    println!("Time per client: {:?}\n", total_duration / num_clients as u32);
     Ok(())
 }
 
@@ -389,7 +392,7 @@ async fn advanced_stress_test(port: u16, num_clients: usize, timeout_ms: u64) ->
     test_behaviors(port, timeout_ms).await?;
 
     println!(
-        "Starting advanced stress test with {} clients...",
+        "\nStarting advanced stress test with {} clients...",
         num_clients
     );
 

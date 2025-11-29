@@ -234,10 +234,12 @@ void Server::client_quited(int fd)
 	this->_localUsers.erase(fd);
 }
 
+//A remplacer avec un send reply
 void Server::send_welcome(int fd)
 {
     std::stringstream ss;
-    ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully registered" << "\r\n";
+    ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully registered";
+    ss << "\r\n";
     this->_localUsers[fd].wbuf += ss.str();
     this->enable_epollout(fd);
     this->write_client_fd(fd);
@@ -365,7 +367,11 @@ void Server::is_authentification_complete(int fd)
         
         this->send_welcome(fd);
         this->_localUsers[fd].client->_registered = true;
-        std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
+
+        std::stringstream ss;
+        ss << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully registered";
+        Debug::print(DEBUG, ss.str()); 
+
     }
 }
 
@@ -632,7 +638,7 @@ void Server::check_localUsers_ping()
             ss.str(""); 
             ss.clear();  
             ss << "[PING :" << now << "] sent to client " << it->first;
-            Debug::print(DEBUG, ss.str()); 
+           Debug::print(DEBUG, ss.str()); 
         }
     }
 }

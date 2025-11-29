@@ -19,8 +19,8 @@ void PongCommand::execute(Client* executor, NetworkState& network, Server& serve
   //debug
 
   std::stringstream ss;
-  ss << _params[0] << ": " << _params[1] 
-    << " from client " << executor->_localClient->fd 
+  ss << "["<< _params[0] << ": " << _params[1] 
+    << "] from client " << executor->_localClient->fd 
     << " received";
 
   Debug::print(DEBUG, ss.str());
