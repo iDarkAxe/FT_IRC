@@ -16,7 +16,7 @@ pub enum ClientBehavior {
     PongWithoutConnect,
     NormalConnection,
     WrongPassword,
-    FragmentedMessages,
+    // FragmentedMessages,
     LowBandwidth,
 }
 

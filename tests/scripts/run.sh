@@ -52,11 +52,14 @@ fi
 
 sleep 1
 
-log "Starting Rust tester..."
+log "Building Rust tester..."
 (
     cd "$CLIENT_DIR"
-    cargo run -- $1 
+    cargo build --release
 )
+
+log "Starting Rust tester..."
+"$CLIENT_DIR/target/release/irc_tester" "$1"
 
 echo "Killing server PID: $SERVER_PID"
 kill $SERVER_PID

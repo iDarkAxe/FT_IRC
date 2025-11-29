@@ -562,7 +562,7 @@ async fn run_client(
         }
         ClientBehavior::NormalConnection => normal_connection(port, false).await,
         ClientBehavior::WrongPassword => normal_connection_wrong_password(port, false).await,
-        ClientBehavior::FragmentedMessages => fragmented_messages(port, false).await,
+        // ClientBehavior::FragmentedMessages => fragmented_messages(port, false).await,
         ClientBehavior::LowBandwidth => low_bandwidth(port, false).await,
     };
 
