@@ -31,49 +31,15 @@ async fn main() -> Result<()> {
 
     //random noise
     // random_noise().await?;
-    // normal_connection(port, debug).await?;
-
-    //faux mot passe
-    // normal_connection_wrong_password(port, debug).await?; //should disconnect immediately
-    //not PASS as first command
-    // normal_connection_not_pass_first(port, debug).await?;
-    //Remplacer un nick
-    // normal_connection_override_existing_nick(port).await?; //attente implementations
-    //Remplacer un user
-    // normal_connection_override_existing_user(port).await?; //attente implementations
-    // SEGFAULT !
-    // fragmented_messages(port, debug).await?; //Après X secondes sans \r\n → timeout
-    // low_bandwidth(port, debug).await?;
-
     //Overflow du buffer (> 512)
-    // read_overflow(port).await?;   //On veut un MAX buffer sur la lecture ?
     //  max 512 octets par ligne
-    //  max X lignes par seconde
-    // Le serveur NE doit PAS :
-    //  Bufferiser tout dans un énorme String.
-    //  Faire un .push_str() sur un buffer qui explose.
-    //  Bloquer la boucle événementielle (epoll/poll).
-    //  Crasher/segfault/panique.
-    //
     //UNICODES
-    //Chars interdits :
-    //NICK \xC0bad\r\n
-    //USER test 0 * :name\xFF\r\n
-    //
-    // Timeout tests
-    // - PONG kick
-    // - not registered and only answer to ping
-    // - partial registration and only answer to ping
-    //
-    //
-    // -- parrallele --
+    //  Chars interdits :
+    //  NICK \xC0bad\r\n
+    //  USER test 0 * :name\xFF\r\n
 
-    // test_behaviors(port, 20000).await?;
     connection_stress_test(port, num_clients, 0).await?;
     advanced_stress_test(port, num_clients, 0).await?;
-
-    //- tester le non bloquant (Bible et normal connection en meme temps)
-    //- Overflow 2 fd
 
     //NICK :
     //- Normal : claim a free nick

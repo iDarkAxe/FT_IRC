@@ -26,8 +26,8 @@ trap kill_server EXIT
 # port > 65535  
 
 ulimit -n $(ulimit -Hn)
-
 echo -e "${YELLOW}ulimit = $(ulimit -n)${NC}"
+
 log "Starting server on port $PORT..."
 $SERVER "$PORT" "$PASS" > .server.log 2>&1 &
 SERVER_PID=$!
