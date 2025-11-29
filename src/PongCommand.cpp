@@ -1,5 +1,6 @@
 #include "PongCommand.hpp"
 #include "Server.hpp"
+#include <sstream>
 
 PongCommand::PongCommand(std::vector<std::string> params)
 {
@@ -16,6 +17,13 @@ void PongCommand::execute(Client* executor, NetworkState& network, Server& serve
   executor->_localClient->timeout = now + 5;
   executor->_localClient->last_ping = now;
   //debug
-  std::cout << format_time() << " Pong from client " << executor->_localClient->fd << " recieved" << std::endl; 
+
+  std::stringstream ss;
+  ss << _params[0] << ": " << _params[1] 
+    << " from client " << executor->_localClient->fd 
+    << " received";
+
+  Debug::print(DEBUG, ss.str());
+  // std::cout << format_time() << " Pong from client " << executor->_localClient->fd << " recieved" << std::endl; 
 }
 

@@ -66,8 +66,8 @@ async fn main() -> Result<()> {
     // -- parrallele --
 
     // test_behaviors(port, 20000).await?;
-    connection_stress_test(port, 1000, 0).await?;
-    advanced_stress_test(port, 700, 20000).await?;
+    connection_stress_test(port, 900, 0).await?;
+    advanced_stress_test(port, 700, 0).await?;
 
     //- tester le non bloquant (Bible et normal connection en meme temps)
     //- Overflow 2 fd

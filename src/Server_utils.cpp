@@ -32,24 +32,6 @@ int make_nonblocking(int fd) { //fcntl et NON_BLOCK uniquemet pour MAC OS ? si o
 	return 0;
 }
 
-std::string format_time() {
-	std::time_t now = time(NULL);
-	//decalage horraire par rapport a utc + 0
-	const int timezone_offset = 3600; 
-	now += timezone_offset;
-
-	std::time_t seconds_in_day = now % 86400; 
-	int hours = static_cast<int>(seconds_in_day / 3600);
-	int minutes = static_cast<int>((seconds_in_day % 3600) / 60);
-	int seconds = static_cast<int>(seconds_in_day % 60);
-
-	std::ostringstream oss;
-	oss << std::setw(2) << std::setfill('0') << hours << ":"
-		<< std::setw(2) << std::setfill('0') << minutes << ":"
-		<< std::setw(2) << std::setfill('0') << seconds;
-	return oss.str();
-}
-
 void pong_command(std::string line, int fd, std::map<int, LocalUser>& localUser)
 {
 	size_t colon = line.find(':');

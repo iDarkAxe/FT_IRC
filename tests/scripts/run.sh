@@ -33,6 +33,7 @@ fi
 
 sleep 1
 
+ulimit -n 65535
 echo "Starting Rust tester..."
 (
     cd "$CLIENT_DIR"
@@ -42,6 +43,21 @@ echo "Starting Rust tester..."
 echo "Kill " $SERVER_PID 
 kill $SERVER_PID
 
-# echo "--- Server log ---"
+ulimit -n 1024
+
+echo "--- Server log ---"
 # verbose mode
-# cat .server.log
+errors_total=$(grep -c "ERROR" .server.log)
+errors_unique=$(grep "ERROR" .server.log | sort | uniq | wc -l)
+pings=$(grep -c "PING" .server.log)
+pongs=$(grep -c "PONG" .server.log)
+timeouts=$(grep -c "timed out" .server.log)
+connections=$(grep -c "New client" .server.log)
+registrations=$(grep -c "successfully connected" .server.log)
+
+printf "%-25s : %5d (unique: %d)\n" "Errors" "$errors_total" "$errors_unique"
+printf "%-25s : %5d\n" "Pings sent" "$pings"
+printf "%-25s : %5d\n" "Pongs received" "$pongs"
+printf "%-25s : %5d\n" "Timed out kicks" "$timeouts"
+printf "%-25s : %5d\n" "Connections" "$connections"
+printf "%-25s : %5d\n" "Registrations" "$registrations"
