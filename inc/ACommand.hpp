@@ -14,7 +14,7 @@ enum command_type
 {
 	INVITE,
 	KICK,
-	CHANGE_TOPIC,
+	TOPIC,
 	MODE,
 	NICK,
 	USER,

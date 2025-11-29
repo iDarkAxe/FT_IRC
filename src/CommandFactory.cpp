@@ -1,5 +1,7 @@
 #include "CommandFactory.hpp"
 #include "InviteCommand.hpp"
+#include "JoinCommand.hpp"
+#include "TopicCommand.hpp"
 
 CommandFactory::CommandFactory() {}
 CommandFactory::~CommandFactory() {}
@@ -12,7 +14,7 @@ CommandFactory& CommandFactory::getInstance() {
 command_type CommandFactory::findType(std::string const& command_name) {
     if (command_name == "INVITE") return INVITE;
     if (command_name == "KICK") return KICK;
-	if (command_name == "CHANGE_TOPIC") return CHANGE_TOPIC;
+	if (command_name == "TOPIC") return TOPIC;
 	if (command_name == "MODE") return MODE;
 	if (command_name == "NICK") return NICK;
 	if (command_name == "USER") return USER;
@@ -33,10 +35,12 @@ ACommand* CommandFactory::createCommand(const std::string& command, const std::v
 	{
 		case INVITE:
 			return new InviteCommand(params);
+		case TOPIC:
+			return new TopicCommand(params);
+		case JOIN:
+			return new JoinCommand(params);
 		// case KICK:
 		// 	return new KickCommand(params);
-		// case CHANGE_TOPIC:
-		// 	return new ChangeTopicCommand(params);
 		// case MODE:
 		// 	return new ModeCommand(params);
 		// case NICK:
@@ -45,18 +49,12 @@ ACommand* CommandFactory::createCommand(const std::string& command, const std::v
 		// 	return new SetUsernameCommand(params);
 		// case PASS:
 		// 	return new PasswordCommand(params);
-		// case JOIN:
-		// 	return new JoinCommand(params);
 		// case LEAVE:
 		// 	return new LeaveCommand(params);
 		// case SEND_MESSAGE:
 		// 	return new SendMessageCommand(params);
 		// case PRIVATE_MESSAGE:
 		// 	return new PrivateMessageCommand(params);
-		// case LIST_CHANNELS:
-		// 	return new ListChannelsCommand(params);
-		// case LIST_USERS:
-		// 	return new ListUsersCommand(params);
 		case UNKNOWN:
 		default:
 			return 0;

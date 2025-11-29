@@ -7,7 +7,7 @@ TopicCommand::TopicCommand(std::vector<std::string> params)
 
 void TopicCommand::execute(Client* executor, Server& server)
 {
-	if (_params.size() < 2) {
+	if (_params.size() < 1) {
 		server.reply(executor, ERR_NEEDMOREPARAMS(executor->getNickname(), "TOPIC"));
 		return;
 	}
@@ -20,7 +20,7 @@ void TopicCommand::execute(Client* executor, Server& server)
 		server.reply(executor, ERR_NOTONCHANNEL(executor->getNickname(), _params[0]));
 		return;
 	}
-	if (_params.size() == 2)
+	if (_params.size() == 1)
 	{
 		if (channel->getTopic().empty()) {
 			server.reply(executor, RPL_NOTOPIC(executor->getNickname(), _params[0]));

@@ -261,33 +261,21 @@ std::vector<std::string> Server::get_params(std::string line)
     }
 
     std::string remaining = line.substr(pos + 1);
-    
-    size_t start = 0;
-    while (start < remaining.length()) {
-        while (start < remaining.length() && remaining[start] == ' ') {
-            start++;
-        }
-        
-        if (start >= remaining.length()) {
-            break;
-        }
-        
-        size_t end = remaining.find(' ', start);
-
-        
-        if (end == std::string::npos) {
-            // std::cout << "param found : " << remaining.substr(start) << std::endl;
-            params.push_back(remaining.substr(start));
-            break;
-        } else {
-            if (remaining.substr(start, end - start).find(":")) // pour USER, mais le check est pas suffisant
-                break;
-            // std::cout << "param found : " << remaining.substr(start, end - start) << std::endl;
-            params.push_back(remaining.substr(start, end - start));
-            start = end + 1;
-        }
-    }
-    return params;
+    std::string after_colon;
+	bool has_colon = remaining.find(':') != std::string::npos;
+	if (has_colon) {
+		size_t colon_pos = remaining.find(':');
+		after_colon = remaining.substr(colon_pos + 1);
+		remaining = remaining.substr(0, colon_pos);
+	}
+	std::stringstream ss(remaining);
+	std::string param;
+	char del = ' ';
+	while (getline(ss, param, del))
+		params.push_back(param);
+	if (has_colon)
+		params.push_back(after_colon);
+	return params;
 }
 
 std::string& Server::getPassword()
@@ -303,7 +291,7 @@ NetworkState& Server::getNetwork()
 ACommand* Server::parse_command(int fd)
 {
     size_t pos;
-    while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) {
+    while ((pos = this->_localUsers[fd].rbuf.find("\r\n")) != std::string::npos) { // TODO: pourquoi while ?
         std::string line = this->_localUsers[fd].rbuf.substr(0, pos);
         this->_localUsers[fd].rbuf.erase(0, pos + 2);
         
@@ -314,24 +302,12 @@ ACommand* Server::parse_command(int fd)
             return NULL;
         // std::cout << "CMD = " << cmd << std::endl;
         std::vector<std::string> params = this->get_params(line);
-        // return CommandFactory(cmd, params);
-
-        // if (line.rfind("PONG", 0) == 0) {
-        //     pong_command(line, fd, this->_localUsers);
-        // }
-        // else if (line.rfind("PASS", 0) == 0) {
-        //     pass_command(line, fd, this->_localUsers, this->_password);
-        // }
-        // else if (line.rfind("NICK", 0) == 0) {
-        //     nick_command(line, fd, this->_localUsers);
-        // }
-        // else if (line.rfind("USER", 0) == 0) {
-        //     user_command(line, fd, this->_localUsers);    
-        // }
-        // else {
-        //     std::cout << "msg from " << fd << ": [" << line << "]" << std::endl;
-        // }
-
+		for(size_t i = 0; i < params.size(); ++i) {
+			std::cout << "PARAM[" << i << "] = " << params[i] << std::endl;
+		}
+        return CommandFactory::createCommand(cmd, params);
+		/*
+		// TODO: pertinence ?
         this->_localUsers[fd].last_ping = std::time(NULL);
 
         if (!this->_localUsers[fd].client->_registered && 
@@ -342,9 +318,8 @@ ACommand* Server::parse_command(int fd)
             this->send_welcome(fd);
             this->_localUsers[fd].client->_registered = true;
             std::cout << this->_localUsers[fd].client->getUsername() << " aka " << this->_localUsers[fd].client->getNickname() << " successfully connected" << std::endl;
-        }
+        }*/
     }
-
     return NULL;
 }
 
@@ -430,18 +405,11 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 				if (result == 0) {
 					continue;
 				} else if (result == 1 ){
-					if (this->_localUsers[fd].rbuf.find("\r\n") != std::string::npos) // si on a recu une ligne complete: -> À SUPPRIMER
-						Server::reply(this->_localUsers[fd].client, "Merci du message");
-					this->parse_command(fd);
-					std::vector<std::string> params;
-					// params.push_back("target_nick");
-					// params.push_back("channel_name");
-					ACommand* command = new InviteCommand(params);
-					if (command)
-					{
-						command->execute(this->_localUsers[fd].client, *this);
-						delete command;
-					}
+					ACommand* command = this->parse_command(fd);
+					if (!command)
+						continue;
+					command->execute(this->_localUsers[fd].client, *this);
+					delete command;
 				}
 				// else : erreur de recv
 			}
