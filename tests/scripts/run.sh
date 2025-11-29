@@ -7,10 +7,11 @@ CLIENT_DIR="tests/irc_tester"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 NC='\033[0m'
 
 log() {
-    echo -e "\n====$*===="
+    echo -e "\n${YELLOW}====$*====${NC}"
 }
 
 kill_server() {
@@ -24,6 +25,9 @@ trap kill_server EXIT
 # Port 0 -> 1024
 # port > 65535  
 
+ulimit -n $(ulimit -Hn)
+
+echo -e "${YELLOW}ulimit = $(ulimit -n)${NC}"
 log "Starting server on port $PORT..."
 $SERVER "$PORT" "$PASS" > .server.log 2>&1 &
 SERVER_PID=$!
@@ -38,6 +42,7 @@ else
     cat .server.log
     exit 1
 fi
+START_TIME=$(date +%s)
 
 if command -v kitty &>/dev/null; then
     kitty --title "IRC Server Log" watch -n 0.1 tail -45 .server.log &
@@ -47,7 +52,6 @@ fi
 
 sleep 1
 
-ulimit -n 65535
 log "Starting Rust tester..."
 (
     cd "$CLIENT_DIR"
@@ -56,6 +60,8 @@ log "Starting Rust tester..."
 
 echo "Killing server PID: $SERVER_PID"
 kill $SERVER_PID
+END_TIME=$(date +%s)
+ELAPSED=$((END_TIME - START_TIME))
 
 ulimit -n 1024
 
@@ -69,7 +75,14 @@ timeouts=$(grep -c "timed out" .server.log)
 connections=$(grep -c "New client" .server.log)
 registrations=$(grep -c "successfully registered" .server.log)
 
+printf "%-25s : %5s\n" "Time elapsed": "${ELAPSED}s"
+echo
 printf "%-25s : %5d (unique: %d)\n" "Errors" "$errors_total" "$errors_unique"
+if [[ $errors_unique -gt 0 ]]; then
+    grep "ERROR" .server.log | sort | uniq -c | while read count msg; do
+        printf "%s x %5d\n" "$msg" "$count" 
+    done
+fi
 printf "%-25s : %5d\n" "Pings sent" "$pings"
 printf "%-25s : %5d\n" "Pongs received" "$pongs"
 printf "%-25s : %5d\n" "Timed out kicks" "$timeouts"

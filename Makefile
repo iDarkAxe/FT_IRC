@@ -147,7 +147,7 @@ re:
 	@$(MAKE) fclean
 	@$(MAKE) all
 
-NUM_CLIENTS ?= 700
+NUM_CLIENTS ?= 1000
 
 test: all
 	./tests/scripts/run.sh $(NUM_CLIENTS)
