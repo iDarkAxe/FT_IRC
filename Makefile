@@ -40,6 +40,7 @@ INC = \
 	UserCommand.hpp \
 	PongCommand.hpp \
 	PrivmsgCommand.hpp \
+	KickCommand.hpp \
 	ModeCommand.hpp \
 	Server_utils.h \
 	Client.hpp \
@@ -64,6 +65,7 @@ SRC = \
 	UserCommand.cpp \
 	PongCommand.cpp \
 	PrivmsgCommand.cpp \
+	KickCommand.cpp \
 	ModeCommand.cpp \
 	utils.cpp \
 	Server.cpp \

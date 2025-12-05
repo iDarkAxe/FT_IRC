@@ -12,7 +12,7 @@ protected:
 public:
 	KickCommand(std::vector<std::string> params);
 	~KickCommand() {};
-	void execute(Client* executor, NetworkState& network, Server& server);
+	void execute(Client* executor, Server& server);
 };
 
 #endif

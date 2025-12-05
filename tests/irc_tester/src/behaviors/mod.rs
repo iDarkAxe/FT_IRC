@@ -9,8 +9,10 @@ pub mod stress;
 pub mod topic;
 pub mod user;
 pub mod nick;
+pub mod kick;
 pub mod pass;
 
+pub use kick::*;
 pub use nick::*;
 pub use pass::*;
 pub use user::*;

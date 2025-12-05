@@ -44,12 +44,18 @@ pub enum ClientBehavior {
 
     // KickBadChanMask,
     // KickNoSuchChannel,
-    // KickNeedMoreParams,
+    KickNeedMoreParams,
     // KickChaNoPrivsNeeded,
     // KickUserNotInChannel,
     JoinNeedMoreParams,
     JoinNoSuchChan,
     JoinNewChan,
+    JoinNotRegistered,
+    // JoinInviteOnlyChannel,
+    // JoinBadChannelKey,
+    // JoinChannelIsFull,
+    JoinExistingChan,
+    // JoinExistingChanMdp,
 
     TopicNeedMoreParams,
 }

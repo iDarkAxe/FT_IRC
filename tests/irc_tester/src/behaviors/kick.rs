@@ -4,7 +4,6 @@ use anyhow::Result;
 // ClientBehavior::KickBadChanMask,
 // ClientBehavior::KickChaNoPrivsNeeded,
 // ClientBehavior::KickUserNotInChannel,
-//
 
 pub async fn kick_need_more_params(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
     let nick = format!("kickneedmorep_{}", id);
