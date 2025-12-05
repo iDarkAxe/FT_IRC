@@ -159,8 +159,10 @@ CLIENTS ?= 1000
 LEAKS ?= 0
 STRESS ?= 0
 
-test: all
-	./tests/scripts/run.sh $(CLIENTS) $(LEAKS) $(STRESS)
+test:
+	make fclean
+	@$(MAKE) $(NAME) CXXFLAGS="$(CXXFLAGS_DEBUG) -D USE_TESTER=1"
+	./tests/scripts/run.sh $(CLIENTS) $(LEAKS) $(STRESS) 
 
 # Aliases
 clear: clean
