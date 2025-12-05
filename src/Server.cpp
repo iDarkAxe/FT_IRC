@@ -15,7 +15,7 @@
 #include "ACommand.hpp"
 #include "CommandFactory.hpp"
 
-// #define USE_FULL_CLIENT
+#define USE_FULL_CLIENT
 // #define USE_TESTER
 #ifdef USE_TESTER
 #define USE_FULL_CLIENT
@@ -225,6 +225,7 @@ void Server::removeLocalUser(int fd)
 	epoll_ctl(this->getEpfd(), EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 	this->clients.erase(fd);
+	// this->clients[fd].printClientInfo();
 }
 
 int Server::getEpfd() const

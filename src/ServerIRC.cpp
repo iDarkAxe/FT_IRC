@@ -34,7 +34,7 @@ bool Server::reply(Client *client, std::string message)
 		else
 		{
 			// error or client disconnected -> Un client qu'on a deja kick
-			std::cerr << "[ERROR] Send error on fd " << client->fd << "\n";
+			std::cerr << "[ERROR] failed to send [" << message << "] error on fd " << client->fd << "\n";
 			epoll_ctl(_epfd, EPOLL_CTL_DEL, client->fd, NULL);
 			close(client->fd);
 			clients.erase(client->fd);
@@ -107,13 +107,19 @@ void Server::remove_inactive_clients()
 			else
 			{
 				// ss << "Disconnected: timed out" << std::endl;
-				this->reply(&client, "timed out");
+				// client.printClientInfo();
+				if (clients.find(it->first) != clients.end() && clients[it->first].fd > 0) //fixed l'erreur sur timed out fd = -1
+					this->reply(&client, "timed out");
 			}
 			to_erase.push_back(it->first);
 		}
 	}
 	for (std::vector<int>::iterator it = to_erase.begin(); it != to_erase.end(); it++)
-		removeLocalUser(*it);
+	{
+		// std::cout << "it = " << *it << std::endl;
+		if (clients.find(*it) != clients.end()) 
+			removeLocalUser(*it);
+	}
 }
 
 void Server::check_clients_ping()
