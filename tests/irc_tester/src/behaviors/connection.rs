@@ -28,7 +28,7 @@ pub async fn normal_connection(port: u16, _debug: bool, id: usize) -> Result<()>
 }
 
 pub async fn legit_disconnect(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
-    let nick = format!("stress_{}", id);
+    let nick = format!("legit_disco_{}", id);
     let mut client = Client::connect(port).await?;
 
     client.send("PASS password\r\n", 0).await?;

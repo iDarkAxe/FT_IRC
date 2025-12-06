@@ -34,7 +34,6 @@ void PassCommand::execute(Client *executor, Server &server)
 	{
 		server.reply(executor, ERR_PASSWDMISMATCH(executor->getNickname()));
 		server.client_kicked(executor->fd);
-		// server.removeLocalUser(executor->_localClient->fd);
 	}
 	return;
 }

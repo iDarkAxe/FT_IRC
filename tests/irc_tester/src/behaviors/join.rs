@@ -132,17 +132,27 @@ pub async fn join_not_registered(port: u16, id: usize, timeout_ms: u64) -> Resul
 }
 
 pub async fn join_existing_chan(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
-    let channel = format!("{}_join_new_chan", id);
+    let channel = format!("{}_join_exis_chan", id);
     let mut client = Client::connect(port).await?;
 
     client.send("PASS password\r\n", 0).await?;
     client
-        .send(&format!("NICK {}_join_new_chan\r\n", channel), 0)
+        .send(&format!("NICK {}\r\n", channel), 0)
         .await?;
-
+    client
+        .send(
+            &format!("USER {} 0 * :join_new_chan\r\n", channel),
+            0,
+        )
+        .await?;
+    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+        if !line.contains("Welcome to the Internet Relay Network") {
+            return Err(anyhow::anyhow!("welcome message missing | received [{line}]"));
+        }
+    }
     client.send("JOIN #newchan\r\n", 0).await?;
     if let Some(line) = client.read_line_timeout(timeout_ms).await? {
-        if !line.contains("JOIN #no_mdp_chan") {
+        if !line.contains("JOIN #newchan") {
             return Err(anyhow::anyhow!("Failed to join an existing chan without pw | received [{line}]"));
         }
     }
@@ -150,24 +160,68 @@ pub async fn join_existing_chan(port: u16, id: usize, timeout_ms: u64) -> Result
     Ok(())
 }
 
-// pub async fn join_existing_chan_mdp(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
-//     let channel = format!("{}_join_new_chan", id);
-//     let mut client = Client::connect(port).await?;
-//
-//     client.send("PASS password\r\n", 0).await?;
-//     client
-//         .send(&format!("NICK {}_join_new_chan\r\n", channel), 0)
-//         .await?;
-//
-//     client.send("JOIN #newchan\r\n", 0).await?;
-//     if let Some(line) = client.read_line_timeout(timeout_ms).await? {
-//         if !line.contains(" :You have not registered") {
-//             return Err(anyhow::anyhow!("ERR_NOTREGISTERED missing | received [{line}]"));
-//         }
-//     }
-//     client.shutdown().await?;
-//     Ok(())
-// }
+pub async fn join_existing_multi_chan(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
+    let channel = format!("{}_join_multi", id);
+    let mut client = Client::connect(port).await?;
+
+    client.send("PASS password\r\n", 0).await?;
+    client
+        .send(&format!("NICK {}\r\n", channel), 0)
+        .await?;
+    client
+        .send(
+            &format!("USER {} 0 * :join_new_chan\r\n", channel),
+            0,
+        )
+        .await?;
+    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+        if !line.contains("Welcome to the Internet Relay Network") {
+            return Err(anyhow::anyhow!("welcome message missing | received [{line}]"));
+        }
+    }
+    client.send(&format!("JOIN #newchan{},#secondnewchan{}\r\n", id, id), 0).await?;
+    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+        if !line.contains(&format!("JOIN #newchan{}", id)) {
+            return Err(anyhow::anyhow!("Failed to join first chan | received [{line}]"));
+        }
+    }
+    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+        if !line.contains(&format!("JOIN #secondnewchan{}", id)) {
+            return Err(anyhow::anyhow!("Failed to join second chan | received [{line}]"));
+        }
+    }
+    client.shutdown().await?;
+    Ok(())
+}
+
+pub async fn join_existing_chan_mdp(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
+    let channel = format!("{}_join_mdp_chan", id);
+    let mut client = Client::connect(port).await?;
+
+    client.send("PASS password\r\n", 0).await?;
+    client
+        .send(&format!("NICK {}_join_mdp_chan\r\n", channel), 0)
+        .await?;
+    client
+        .send(
+            &format!("USER {} 0 * :join_new_chan\r\n", channel),
+            0,
+        )
+        .await?;
+    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+        if !line.contains("Welcome to the Internet Relay Network") {
+            return Err(anyhow::anyhow!("welcome message missing | received [{line}]"));
+        }
+    }
+    client.send("JOIN #mdp_chan chan\r\n", 0).await?;
+    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+        if !line.contains("JOIN #mdp_chan") {
+            return Err(anyhow::anyhow!("Failed to join chan_with_mdp | received [{line}]"));
+        }
+    }
+    client.shutdown().await?;
+    Ok(())
+}
 
 
 

@@ -7,6 +7,10 @@ KickCommand::KickCommand(std::vector<std::string> params)
 	_params = params;
 }
 
+// _params[0] -> #a,#b,#c 
+// _params[1] -> nick,nick,nick
+// _params[2] -> msg si il y en a un 
+
 void KickCommand::execute(Client* executor, Server& server)
 {
 	if (!executor->isRegistered())
@@ -17,8 +21,6 @@ void KickCommand::execute(Client* executor, Server& server)
 		server.reply(executor, ERR_NEEDMOREPARAMS(executor->getNickname(), "KICK"));
 		return;
 	}
-
-	//Compter les params pour executer un simple kick ici
 
 	std::vector<std::string> chans;
 	std::vector<std::string> users;
@@ -60,8 +62,13 @@ void KickCommand::execute(Client* executor, Server& server)
 		{
 			server.reply(executor, ERR_USERNOTINCHANNEL(executor->getNickname(), users[i], chans[i]));
 		}
+		// std::stringstream ss;
+		// ss << ":" << executor->getNickname() << "!~" << executor->getUsername() << "@" << executor.getIp() 
+		// 	<< " KICK " << chan->getName() << target->getNickname() << " :" << target->getNickname();
+		// server.replyChannel(chan, ss.str());
 	}
 	return;
 }
 
 // KICK #a,#b John,Mark :Raison du kick
+//REPLY On chan :theNick!~theUser@46.231.218.157 KICK #Theonlychan otherNick :otherNick

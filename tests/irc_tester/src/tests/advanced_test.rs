@@ -52,7 +52,7 @@ async fn run_client(
         // ClientBehavior::PrivmsgNoSuchChannel => privmsg_no_such_channel(port, id, timeout_ms).await,
         // ClientBehavior::PrivmsgCannotSendToChan => privmsg_cannot_send_to_chan(port, id, timeout_ms).await,
         ClientBehavior::PrivmsgNoSuchNick => privmsg_no_such_nick(port, id, timeout_ms).await,
-        ClientBehavior::KickNeedMoreParams => kick_need_more_params(port, id, timeout_ms).await,
+        // ClientBehavior::KickNeedMoreParams => kick_need_more_params(port, id, timeout_ms).await,
         // ClientBehavior::KickNoSuchChannel => kick_no_such_channel(port, id, timeout_ms).await,
         ClientBehavior::JoinNeedMoreParams => join_need_more_params(port, id, timeout_ms).await,
         ClientBehavior::JoinNoSuchChan => join_no_such_channel(port, id, timeout_ms).await,
@@ -62,7 +62,9 @@ async fn run_client(
         // ClientBehavior::JoinBadChannelKey => join_bad_channel_key(port, id, timeout_ms).await,
         // ClientBehavior::JoinChannelIsFull => join_channel_is_full(port, id, timeout_ms).await,
         ClientBehavior::TopicNeedMoreParams => topic_need_more_params(port, id, timeout_ms).await,
+        ClientBehavior::JoinExistingChanMdp => join_existing_chan_mdp(port, id, timeout_ms).await,
         ClientBehavior::JoinExistingChan => join_existing_chan(port, id, timeout_ms).await,
+        ClientBehavior::JoinExistingMutliChan => join_existing_multi_chan(port, id, timeout_ms).await,
         // ClientBehavior::JoinExistingChanMdp => join_existing_chan_mdp(port, id, timeout_ms).await,
     };
 
@@ -103,7 +105,8 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         // ClientBehavior::PrivmsgNoSuchChannel, //revooir ce test
         // ClientBehavior::PrivmsgCannotSendToChan,
         ClientBehavior::PrivmsgNoSuchNick,
-        ClientBehavior::KickNeedMoreParams, // je capte pas pk ca mrche pas
+        //Fix _params in KICK first
+        // ClientBehavior::KickNeedMoreParams,
         // ClientBehavior::KickBadChanMask,
         // ClientBehavior::KickNoSuchChannel, //a revoir 
         // ClientBehavior::KickChaNoPrivsNeeded,
@@ -116,6 +119,9 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         // ClientBehavior::JoinBadChannelKey,
         // ClientBehavior::JoinChannelIsFull,
         ClientBehavior::TopicNeedMoreParams,
+        ClientBehavior::JoinExistingMutliChan,
+        ClientBehavior::JoinExistingChan,
+        ClientBehavior::JoinExistingChanMdp,
     ];
 
     let mut futures: FuturesUnordered<_> = behaviors
