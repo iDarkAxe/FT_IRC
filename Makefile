@@ -162,9 +162,13 @@ LEAKS ?= 0
 STRESS ?= 0
 
 test:
-	make fclean
+ifeq ($(LEAKS),1)
+	$(MAKE) fclean
 	@$(MAKE) $(NAME) CXXFLAGS="$(CXXFLAGS_DEBUG) -D USE_TESTER=1"
-	./tests/scripts/run.sh $(CLIENTS) $(LEAKS) $(STRESS) 
+else
+	@$(MAKE) $(NAME)
+endif
+	./tests/scripts/run.sh $(CLIENTS) $(LEAKS) $(STRESS)
 
 # Aliases
 clear: clean

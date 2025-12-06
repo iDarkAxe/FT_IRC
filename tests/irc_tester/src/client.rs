@@ -7,78 +7,7 @@ use tokio::{
     time::{Duration, sleep},
 };
 
-#[derive(Copy, Clone, Debug)]
-pub enum ClientBehavior {
-    //connection
-    LegitDisconnect,
-    FragmentedMessages,
-    LowBandwidth,
-    ContinuousNoise,
-    TooLongMessage,
 
-    //pong
-    LegitIgnorePong,
-    StartIgnoreAll,
-    PongOnly,
-    WrongPong,
-    PongWithoutConnect,
-
-    //nick
-    NickNormalClaimAndChange,
-    NickNoNicknameGiven,
-    NickAlreadyInUse,
-
-    //pass
-    WrongPassword,
-    PassAlreadyRregistered,
-    PassNeedMoreParams,
-    PassNotFirst,
-
-    //User
-    UserAlreadyRegistered,
-    UserNeedMoreParams,
-
-    //Invite
-    InviteNeedMoreParams,
-    InviteNoSuchNick,
-    InviteNotOnChannel,
-    InviteNoPriv,
-    InviteNotRegistered,
-
-    //privmsg
-    PrivmsgNoRecipient,
-    PrivmsgNoTextToSend,
-    // PrivmsgNoSuchChannel,
-    // PrivmsgCannotSendToChan,
-    PrivmsgNoSuchNick,
-
-    //kick
-    // KickBadChanMask,
-    // KickNoSuchChannel, // -> segfault : isClientInChannel Channel.cpp 108 (invalid read of size)
-    KickNeedMoreParams,
-    // KickChaNoPrivsNeeded,
-    // KickUserNotInChannel,
-
-    //join
-    JoinNeedMoreParams,
-    JoinNoSuchChan,
-    JoinNewChan,
-    JoinNotRegistered,
-    JoinInviteOnlyChannel,
-    // JoinBadChannelKey,
-    // JoinChannelIsFull,
-    JoinExistingChan,
-    JoinExistingChanMdp,
-    JoinExistingMutliChan,
-
-    //topic
-    TopicNeedMoreParams,
-    TopicNotOnChannel,
-    TopicNoTopic,
-    // TopicRpl,
-    // TopicNoPriv,
-    // TopicNoChanModes,
-}
 
 pub struct Client {
     writer: Arc<Mutex<BufWriter<tokio::net::tcp::OwnedWriteHalf>>>,

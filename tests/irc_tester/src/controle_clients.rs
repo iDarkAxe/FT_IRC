@@ -2,7 +2,7 @@ use crate::client::Client;
 use anyhow::Result;
 use tokio::time::{Duration, sleep};
 
-pub async fn controle_client(port: u16) -> Result<()> {
+pub async fn reserved_nick_client(port: u16) -> Result<()> {
     let mut client = Client::connect(port).await?;
 
     client.send("PASS password\r\n", 0).await?;

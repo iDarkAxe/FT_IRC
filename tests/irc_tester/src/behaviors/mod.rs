@@ -1,6 +1,5 @@
 pub mod invite;
 pub mod join;
-// pub mod kick;
 pub mod kick;
 pub mod nick;
 pub mod pass;
@@ -9,15 +8,3 @@ pub mod privmsg;
 pub mod protocol;
 pub mod topic;
 pub mod user;
-
-pub use invite::*;
-pub use join::*;
-pub use kick::*;
-pub use nick::*;
-pub use pass::*;
-pub use user::*;
-// pub use kick::*;
-pub use ping_pong::*;
-pub use privmsg::*;
-pub use protocol::*;
-pub use topic::*;

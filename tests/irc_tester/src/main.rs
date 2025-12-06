@@ -1,15 +1,14 @@
-use anyhow::Result;
-use std::env;
 mod behaviors;
 mod client;
-mod tests;
-mod utils;
-use crate::tests::advanced_test::test_behaviors;
-use crate::tests::controle::controle_client;
-use crate::tests::controle::invite_chan_client;
-use crate::tests::controle::mdp_chan_client;
-use crate::tests::controle::no_mdp_chan_client;
-use tests::{advanced_stress_test, connection_stress_test};
+mod behavior;
+mod stress_tests;
+mod result;
+mod controle_clients;
+
+use crate::controle_clients::*;
+use crate::stress_tests::*;
+use anyhow::Result;
+use std::env;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -22,7 +21,7 @@ async fn main() -> Result<()> {
         .parse()
         .expect("Argument must be a positive integer");
 
-    let controle_handle = tokio::spawn(controle_client(port));
+    let controle_handle = tokio::spawn(reserved_nick_client(port));
     let no_mdp_chan_handle = tokio::spawn(no_mdp_chan_client(port));
     let mdp_chan_handle = tokio::spawn(mdp_chan_client(port));
     let invite_chan_handle = tokio::spawn(invite_chan_client(port));
