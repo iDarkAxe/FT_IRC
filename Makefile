@@ -160,6 +160,9 @@ re:
 CLIENTS ?= 1000
 LEAKS ?= 0
 STRESS ?= 0
+LOG ?= 0
+BEH ?= 0
+#PORT?=6667
 
 test:
 ifeq ($(LEAKS),1)
@@ -168,7 +171,7 @@ ifeq ($(LEAKS),1)
 else
 	@$(MAKE) $(NAME)
 endif
-	./tests/run.sh $(CLIENTS) $(LEAKS) $(STRESS)
+	./tests/run.sh $(CLIENTS) $(LEAKS) $(STRESS) $(LOG) $(BEH)
 
 # Aliases
 clear: clean

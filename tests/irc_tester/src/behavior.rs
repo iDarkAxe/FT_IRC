@@ -1,5 +1,7 @@
 use crate::behaviors::*;
 // use crate::client::behaviors::*;
+use crate::behavior::nick::*;
+use crate::behavior::protocol::*;
 use crate::behaviors::invite::*;
 use crate::behaviors::join::*;
 use crate::behaviors::kick::*;
@@ -8,15 +10,12 @@ use crate::behaviors::ping_pong::*;
 use crate::behaviors::privmsg::*;
 use crate::behaviors::topic::*;
 use crate::behaviors::user::*;
-use crate::behavior::protocol::*;
-use crate::behavior::nick::*;
 
+use anyhow::Result;
 use std::future::Future;
 use std::pin::Pin;
-use anyhow::Result;
 
-pub type Handler =
-    fn(u16, usize, u64) -> Pin<Box<dyn Future<Output = Result<()>> + Send>>;
+pub type Handler = fn(u16, usize, u64) -> Pin<Box<dyn Future<Output = Result<()>> + Send>>;
 
 pub trait BehaviorHandler {
     fn handler(&self) -> Handler;
@@ -139,7 +138,6 @@ impl BehaviorHandler for ClientBehavior {
 
             KickNeedMoreParams => |p, id, t| Box::pin(kick_need_more_params(p, id, t)),
             // KickNoSuchChannel => |p, id, t| Box::pin(kick_no_such_channel(p, id, t)),
-
             JoinNeedMoreParams => |p, id, t| Box::pin(join_need_more_params(p, id, t)),
             JoinNoSuchChan => |p, id, t| Box::pin(join_no_such_channel(p, id, t)),
             JoinNewChan => |p, id, t| Box::pin(join_new_channel(p, id, t)),
@@ -150,7 +148,6 @@ impl BehaviorHandler for ClientBehavior {
             JoinExistingChan => |p, id, t| Box::pin(join_existing_chan(p, id, t)),
             // JoinBadChannelKey => |p, id, t| Box::pin(join_bad_channel_key(p, id, t)),
             // JoinChannelIsFull => |p, id, t| Box::pin(join_channel_is_full(p, id, t)),
-
             TopicNeedMoreParams => |p, id, t| Box::pin(topic_need_more_params(p, id, t)),
             TopicNotOnChannel => |p, id, t| Box::pin(topic_not_on_chan(p, id, t)),
             TopicNoTopic => |p, id, t| Box::pin(topic_no_topic(p, id, t)),
@@ -160,4 +157,3 @@ impl BehaviorHandler for ClientBehavior {
         }
     }
 }
-

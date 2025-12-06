@@ -1,7 +1,7 @@
-use crate::client::Client;
-use crate::behavior::ClientBehavior;
-use crate::result::ClientResult;
 use crate::behavior::BehaviorHandler;
+use crate::behavior::ClientBehavior;
+use crate::client::Client;
+use crate::result::ClientResult;
 
 use anyhow::Result;
 use futures::stream::{FuturesUnordered, StreamExt};

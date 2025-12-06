@@ -7,8 +7,6 @@ use tokio::{
     time::{Duration, sleep},
 };
 
-
-
 pub struct Client {
     writer: Arc<Mutex<BufWriter<tokio::net::tcp::OwnedWriteHalf>>>,
     reader: tokio::io::BufReader<tokio::net::tcp::OwnedReadHalf>,

@@ -57,14 +57,16 @@ log "Building Rust tester..."
     cargo build --release
 ) || exit 1
 
-if command -v kitty &>/dev/null; then
+KITTY_PID=0
+if command -v kitty &>/dev/null && [ "$4" = 1 ]; then
     kitty --title "IRC Server Log" watch -n 0.1 tail -45 .server.log 2> /dev/null &
     KITTY_PID=$!
 fi
 
 START_TIME=$(date +%s)
 log "Starting Rust tester..."
-"$CLIENT_DIR/target/release/irc_tester" "$1" "$3"
+
+"$CLIENT_DIR/target/release/irc_tester" "$1" "$3" "$5"
 
 echo "Killing server PID: $SERVER_PID"
 kill $SERVER_PID
