@@ -168,7 +168,7 @@ ifeq ($(LEAKS),1)
 else
 	@$(MAKE) $(NAME)
 endif
-	./tests/scripts/run.sh $(CLIENTS) $(LEAKS) $(STRESS)
+	./tests/run.sh $(CLIENTS) $(LEAKS) $(STRESS)
 
 # Aliases
 clear: clean
