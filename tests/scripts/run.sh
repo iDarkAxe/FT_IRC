@@ -91,7 +91,7 @@ printf "%-25s : %5d (%d/s)\n" "Events" "${EVENTS}" "$((EVENTS / ELAPSED))"
 echo
 printf "%-25s : %5d (unique: %d)\n" "Errors" "$errors_total" "$errors_unique"
 if [[ $errors_unique -gt 0 ]]; then
-    grep "ERROR" .server.log | sort | uniq -c | while read count msg; do
+    grep "ERROR" .server.log |  awk '{$1=""; sub(/^ /, ""); print}' | sort | uniq -c | while read count msg; do
         printf "%s x %5d\n" "$msg" "$count" 
     done
 fi
