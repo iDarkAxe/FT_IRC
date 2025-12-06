@@ -223,6 +223,35 @@ pub async fn join_existing_chan_mdp(port: u16, id: usize, timeout_ms: u64) -> Re
     Ok(())
 }
 
+pub async fn join_invite_only_chan(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
+    let channel = format!("{}_join_inviteO_chan", id);
+    let mut client = Client::connect(port).await?;
+
+    client.send("PASS password\r\n", 0).await?;
+    client
+        .send(&format!("NICK {}\r\n", channel), 0)
+        .await?;
+    client
+        .send(
+            &format!("USER {} 0 * :join_new_chan\r\n", channel),
+            0,
+        )
+        .await?;
+    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+        if !line.contains("Welcome to the Internet Relay Network") {
+            return Err(anyhow::anyhow!("welcome message missing | received [{line}]"));
+        }
+    }
+    client.send("JOIN #invite_chan chan\r\n", 0).await?;
+    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+        if !line.contains(" :Cannot join channel (+i)") {
+            return Err(anyhow::anyhow!("ERR_INVITEONLYCHAN missing | received [{line}]"));
+        }
+    }
+    client.shutdown().await?;
+    Ok(())
+}
+
 
 
 

@@ -9,56 +9,70 @@ use tokio::{
 
 #[derive(Copy, Clone, Debug)]
 pub enum ClientBehavior {
+    //connection
     LegitDisconnect,
-    LegitIgnorePong,
-    StartIgnoreAll,
-    PongOnly,
-    WrongPong,
-    PongWithoutConnect,
     NormalConnection,
-    WrongPassword,
     FragmentedMessages,
     LowBandwidth,
     ContinuousNoise,
     TooLongMessage,
 
+    //pong 
+    LegitIgnorePong,
+    StartIgnoreAll,
+    PongOnly,
+    WrongPong,
+    PongWithoutConnect,
+
+    //nick 
     NickNormalClaimAndChange,
     NickNoNicknameGiven,
-    // NickAlreadyInUse,
+    NickAlreadyInUse,
+
+    //pass
+    WrongPassword,
     PassAlreadyRregistered,
     PassNeedMoreParams,
     PassNotFirst,
 
+    //User
     UserAlreadyRegistered,
     UserNeedMoreParams,
 
+    //Invite
     InviteNeedMoreParams,
-    // InviteNoSuchNick,
-    // InviteNotOnChannel,
+    InviteNoSuchNick,
+    InviteNotOnChannel,
+    InviteNoPriv,
+    InviteNotRegistered,
 
+    //privmsg
     PrivmsgNoRecipient,
     PrivmsgNoTextToSend,
     // PrivmsgNoSuchChannel,
     // PrivmsgCannotSendToChan,
     PrivmsgNoSuchNick,
 
+    //kick
     // KickBadChanMask,
-    // KickNoSuchChannel,
-    // KickNeedMoreParams,
+    // KickNoSuchChannel, // -> segfault : isClientInChannel Channel.cpp 108 (invalid read of size)
+    KickNeedMoreParams,
     // KickChaNoPrivsNeeded,
     // KickUserNotInChannel,
+
+    //join
     JoinNeedMoreParams,
     JoinNoSuchChan,
     JoinNewChan,
     JoinNotRegistered,
-    // JoinInviteOnlyChannel,
+    JoinInviteOnlyChannel,
     // JoinBadChannelKey,
     // JoinChannelIsFull,
     JoinExistingChan,
     JoinExistingChanMdp,
     JoinExistingMutliChan,
-    // JoinExistingChanMdp,
 
+    //topic
     TopicNeedMoreParams,
 }
 

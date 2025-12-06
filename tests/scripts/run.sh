@@ -76,7 +76,7 @@ EVENTS=$(cat .server.log | wc -l)
 
 ulimit -n 1024
 
-log "======= Server log ======="
+log "============== Server log =============="
 # verbose mode
 errors_total=$(grep -c "ERROR" .server.log)
 errors_unique=$(grep "ERROR" .server.log | sort | uniq | wc -l)

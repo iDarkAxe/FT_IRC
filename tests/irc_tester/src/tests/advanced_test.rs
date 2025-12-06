@@ -18,54 +18,64 @@ async fn run_client(
     let start_time = Instant::now();
     let result: anyhow::Result<()> = match behavior {
         ClientBehavior::NormalConnection => normal_connection(port, false, id).await,
-        ClientBehavior::WrongPassword => normal_connection_wrong_password(port, false).await,
         ClientBehavior::FragmentedMessages => fragmented_messages(port, false, id).await,
         ClientBehavior::LowBandwidth => low_bandwidth(port, false, id).await,
-        ClientBehavior::PassNotFirst => pass_not_first(port, id, timeout_ms).await,
         ClientBehavior::LegitDisconnect => legit_disconnect(port, id, timeout_ms).await,
+        ClientBehavior::ContinuousNoise => continuous_noise(port, timeout_ms).await,
+        ClientBehavior::TooLongMessage => too_long_message(port, timeout_ms).await,
+
+
+        ClientBehavior::WrongPong => wrong_pong(port, id, timeout_ms).await,
+        ClientBehavior::PongWithoutConnect => pong_without_connect(port, timeout_ms).await,
         ClientBehavior::LegitIgnorePong => legit_ignore_pong(port, id, timeout_ms).await,
         ClientBehavior::StartIgnoreAll => start_ignore_all(port, id, timeout_ms).await,
         ClientBehavior::PongOnly => pong_only(port, id, timeout_ms).await,
-        ClientBehavior::WrongPong => wrong_pong(port, id, timeout_ms).await,
-        ClientBehavior::PongWithoutConnect => pong_without_connect(port, timeout_ms).await,
-        ClientBehavior::ContinuousNoise => continuous_noise(port, timeout_ms).await,
-        ClientBehavior::TooLongMessage => too_long_message(port, timeout_ms).await,
+        
         ClientBehavior::NickNormalClaimAndChange => {
             nick_normal_claim_and_change(port, id, timeout_ms).await
         }
         ClientBehavior::NickNoNicknameGiven => nick_no_nickname_given(port, id, timeout_ms).await,
+        ClientBehavior::NickAlreadyInUse => nick_already_in_use(port, id, timeout_ms).await,
+        
+        ClientBehavior::WrongPassword => normal_connection_wrong_password(port, false).await,
+        ClientBehavior::PassNotFirst => pass_not_first(port, id, timeout_ms).await,
         ClientBehavior::PassAlreadyRregistered => {
             pass_already_registered(port, id, timeout_ms).await
         }
         ClientBehavior::PassNeedMoreParams => pass_need_more_params(port, id, timeout_ms).await,
+
         ClientBehavior::UserAlreadyRegistered => {
             user_already_registered(port, id, timeout_ms).await
         }
         ClientBehavior::UserNeedMoreParams => user_need_more_params(port, id, timeout_ms).await,
+
         ClientBehavior::InviteNeedMoreParams => invite_need_more_params(port, id, timeout_ms).await,
-        // ClientBehavior::InviteNoSuchNick => invite_no_such_nick(port, id, timeout_ms).await, //
-        // il nous faut un channel valide pour rejeter nick mais valider chan
-        // ClientBehavior::InviteNotOnChannel => invite_not_on_channel(port, id, timeout_ms).await,
-        // idem, il nous faut un channel surlequel le client n'est pas 
+        ClientBehavior::InviteNoSuchNick => invite_no_such_nick(port, id, timeout_ms).await, //
+        ClientBehavior::InviteNotOnChannel => invite_not_on_channel(port, id, timeout_ms).await,
+        ClientBehavior::InviteNoPriv => invite_no_priv(port, id, timeout_ms).await,
+        ClientBehavior::InviteNotRegistered => invite_not_registered(port, id, timeout_ms).await,
+
         ClientBehavior::PrivmsgNoRecipient => privmsg_no_recipient(port, id, timeout_ms).await,
         ClientBehavior::PrivmsgNoTextToSend => privmsg_no_text_to_send(port, id, timeout_ms).await,
         // ClientBehavior::PrivmsgNoSuchChannel => privmsg_no_such_channel(port, id, timeout_ms).await,
         // ClientBehavior::PrivmsgCannotSendToChan => privmsg_cannot_send_to_chan(port, id, timeout_ms).await,
         ClientBehavior::PrivmsgNoSuchNick => privmsg_no_such_nick(port, id, timeout_ms).await,
-        // ClientBehavior::KickNeedMoreParams => kick_need_more_params(port, id, timeout_ms).await,
+
+        ClientBehavior::KickNeedMoreParams => kick_need_more_params(port, id, timeout_ms).await,
         // ClientBehavior::KickNoSuchChannel => kick_no_such_channel(port, id, timeout_ms).await,
+
         ClientBehavior::JoinNeedMoreParams => join_need_more_params(port, id, timeout_ms).await,
         ClientBehavior::JoinNoSuchChan => join_no_such_channel(port, id, timeout_ms).await,
         ClientBehavior::JoinNewChan => join_new_channel(port, id, timeout_ms).await,
         ClientBehavior::JoinNotRegistered => join_not_registered(port, id, timeout_ms).await,
-        // ClientBehavior::JoinInviteOnlyChannel => join_invite_only_channel(port, id, timeout_ms).await,
-        // ClientBehavior::JoinBadChannelKey => join_bad_channel_key(port, id, timeout_ms).await,
-        // ClientBehavior::JoinChannelIsFull => join_channel_is_full(port, id, timeout_ms).await,
-        ClientBehavior::TopicNeedMoreParams => topic_need_more_params(port, id, timeout_ms).await,
+        ClientBehavior::JoinExistingMutliChan => join_existing_multi_chan(port, id, timeout_ms).await,
+        ClientBehavior::JoinInviteOnlyChannel => join_invite_only_chan(port, id, timeout_ms).await,
         ClientBehavior::JoinExistingChanMdp => join_existing_chan_mdp(port, id, timeout_ms).await,
         ClientBehavior::JoinExistingChan => join_existing_chan(port, id, timeout_ms).await,
-        ClientBehavior::JoinExistingMutliChan => join_existing_multi_chan(port, id, timeout_ms).await,
-        // ClientBehavior::JoinExistingChanMdp => join_existing_chan_mdp(port, id, timeout_ms).await,
+        // ClientBehavior::JoinBadChannelKey => join_bad_channel_key(port, id, timeout_ms).await,
+        // ClientBehavior::JoinChannelIsFull => join_channel_is_full(port, id, timeout_ms).await,
+
+        ClientBehavior::TopicNeedMoreParams => topic_need_more_params(port, id, timeout_ms).await,
     };
 
     let reply_time = Instant::now() - start_time;
@@ -90,38 +100,48 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         ClientBehavior::LowBandwidth,
         ClientBehavior::ContinuousNoise,
         ClientBehavior::TooLongMessage,
+
         ClientBehavior::NickNormalClaimAndChange,
         ClientBehavior::NickNoNicknameGiven,
+        ClientBehavior::NickAlreadyInUse,
+
         ClientBehavior::PassAlreadyRregistered,
         ClientBehavior::PassNeedMoreParams, 
-        ClientBehavior::PassNotFirst, 
+        ClientBehavior::PassNotFirst,
+
         ClientBehavior::UserAlreadyRegistered,
         ClientBehavior::UserNeedMoreParams,
+
         ClientBehavior::InviteNeedMoreParams,
-        // ClientBehavior::InviteNoSuchNick, //need a valid chan
-        // ClientBehavior::InviteNotOnChannel, //idem
+        ClientBehavior::InviteNoSuchNick, 
+        ClientBehavior::InviteNotOnChannel, 
+        ClientBehavior::InviteNoPriv,
+        ClientBehavior::InviteNotRegistered,
+
         ClientBehavior::PrivmsgNoRecipient,
         ClientBehavior::PrivmsgNoTextToSend,
         // ClientBehavior::PrivmsgNoSuchChannel, //revooir ce test
         // ClientBehavior::PrivmsgCannotSendToChan,
         ClientBehavior::PrivmsgNoSuchNick,
-        //Fix _params in KICK first
-        // ClientBehavior::KickNeedMoreParams,
+
+        ClientBehavior::KickNeedMoreParams,
         // ClientBehavior::KickBadChanMask,
         // ClientBehavior::KickNoSuchChannel, //a revoir 
         // ClientBehavior::KickChaNoPrivsNeeded,
         // ClientBehavior::KickUserNotInChannel,
+        
         ClientBehavior::JoinNeedMoreParams,
         ClientBehavior::JoinNoSuchChan,
         ClientBehavior::JoinNewChan,
         ClientBehavior::JoinNotRegistered,
-        // ClientBehavior::JoinInviteOnlyChannel,
-        // ClientBehavior::JoinBadChannelKey,
-        // ClientBehavior::JoinChannelIsFull,
-        ClientBehavior::TopicNeedMoreParams,
+        ClientBehavior::JoinInviteOnlyChannel,
         ClientBehavior::JoinExistingMutliChan,
         ClientBehavior::JoinExistingChan,
         ClientBehavior::JoinExistingChanMdp,
+        // ClientBehavior::JoinBadChannelKey,
+        // ClientBehavior::JoinChannelIsFull,
+        
+        ClientBehavior::TopicNeedMoreParams,
     ];
 
     let mut futures: FuturesUnordered<_> = behaviors
