@@ -16,14 +16,14 @@ pub enum ClientBehavior {
     ContinuousNoise,
     TooLongMessage,
 
-    //pong 
+    //pong
     LegitIgnorePong,
     StartIgnoreAll,
     PongOnly,
     WrongPong,
     PongWithoutConnect,
 
-    //nick 
+    //nick
     NickNormalClaimAndChange,
     NickNoNicknameGiven,
     NickAlreadyInUse,
@@ -86,8 +86,13 @@ pub struct Client {
 }
 
 impl Client {
-
-    pub async fn try_expect(&mut self, cmd: &str, expect: &str, error: &str, timeout_ms: u64) -> Result<()> {
+    pub async fn try_expect(
+        &mut self,
+        cmd: &str,
+        expect: &str,
+        error: &str,
+        timeout_ms: u64,
+    ) -> Result<()> {
         self.send(cmd, 0).await?;
         if let Some(line) = self.read_line_timeout(timeout_ms).await? {
             if !line.contains(expect) {
@@ -108,22 +113,18 @@ impl Client {
 
     pub async fn authenticate(&mut self, nick: String, timeout_ms: u64) -> Result<()> {
         self.send("PASS password\r\n", 0).await?;
-        self
-            .send(&format!("NICK {}\r\n", nick), 0)
-            .await?;
-        self
-            .send(
-                &format!(
-                    "USER {}_username 0 * :{}_username\r\n",
-                    nick, nick
-                ),
-                0,
-            )
-            .await?;
+        self.send(&format!("NICK {}\r\n", nick), 0).await?;
+        self.send(
+            &format!("USER {}_username 0 * :{}_username\r\n", nick, nick),
+            0,
+        )
+        .await?;
 
         if let Some(line) = self.read_line_timeout(timeout_ms).await? {
             if !line.contains("Welcome to the Internet Relay Network") {
-                return Err(anyhow::anyhow!("Welcome message missing | received [{line}]"));
+                return Err(anyhow::anyhow!(
+                    "Welcome message missing | received [{line}]"
+                ));
             }
         }
         Ok(())

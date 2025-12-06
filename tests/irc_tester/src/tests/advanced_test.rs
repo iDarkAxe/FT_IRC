@@ -23,19 +23,18 @@ async fn run_client(
         ClientBehavior::ContinuousNoise => continuous_noise(port, timeout_ms).await,
         ClientBehavior::TooLongMessage => too_long_message(port, timeout_ms).await,
 
-
         ClientBehavior::WrongPong => wrong_pong(port, id, timeout_ms).await,
         ClientBehavior::PongWithoutConnect => pong_without_connect(port, timeout_ms).await,
         ClientBehavior::LegitIgnorePong => legit_ignore_pong(port, id, timeout_ms).await,
         ClientBehavior::StartIgnoreAll => start_ignore_all(port, id, timeout_ms).await,
         ClientBehavior::PongOnly => pong_only(port, id, timeout_ms).await,
-        
+
         ClientBehavior::NickNormalClaimAndChange => {
             nick_normal_claim_and_change(port, id, timeout_ms).await
         }
         ClientBehavior::NickNoNicknameGiven => nick_no_nickname_given(port, id, timeout_ms).await,
         ClientBehavior::NickAlreadyInUse => nick_already_in_use(port, id, timeout_ms).await,
-        
+
         ClientBehavior::WrongPassword => normal_connection_wrong_password(port, false).await,
         ClientBehavior::PassNotFirst => pass_not_first(port, id, timeout_ms).await,
         ClientBehavior::PassAlreadyRregistered => {
@@ -62,18 +61,18 @@ async fn run_client(
 
         ClientBehavior::KickNeedMoreParams => kick_need_more_params(port, id, timeout_ms).await,
         // ClientBehavior::KickNoSuchChannel => kick_no_such_channel(port, id, timeout_ms).await,
-
         ClientBehavior::JoinNeedMoreParams => join_need_more_params(port, id, timeout_ms).await,
         ClientBehavior::JoinNoSuchChan => join_no_such_channel(port, id, timeout_ms).await,
         ClientBehavior::JoinNewChan => join_new_channel(port, id, timeout_ms).await,
         ClientBehavior::JoinNotRegistered => join_not_registered(port, id, timeout_ms).await,
-        ClientBehavior::JoinExistingMutliChan => join_existing_multi_chan(port, id, timeout_ms).await,
+        ClientBehavior::JoinExistingMutliChan => {
+            join_existing_multi_chan(port, id, timeout_ms).await
+        }
         ClientBehavior::JoinInviteOnlyChannel => join_invite_only_chan(port, id, timeout_ms).await,
         ClientBehavior::JoinExistingChanMdp => join_existing_chan_mdp(port, id, timeout_ms).await,
         ClientBehavior::JoinExistingChan => join_existing_chan(port, id, timeout_ms).await,
         // ClientBehavior::JoinBadChannelKey => join_bad_channel_key(port, id, timeout_ms).await,
         // ClientBehavior::JoinChannelIsFull => join_channel_is_full(port, id, timeout_ms).await,
-
         ClientBehavior::TopicNeedMoreParams => topic_need_more_params(port, id, timeout_ms).await,
         ClientBehavior::TopicNotOnChannel => topic_not_on_chan(port, id, timeout_ms).await,
         ClientBehavior::TopicNoTopic => topic_no_topic(port, id, timeout_ms).await,
@@ -103,36 +102,29 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         ClientBehavior::LowBandwidth,
         ClientBehavior::ContinuousNoise,
         ClientBehavior::TooLongMessage,
-
         ClientBehavior::NickNormalClaimAndChange,
         ClientBehavior::NickNoNicknameGiven,
         ClientBehavior::NickAlreadyInUse,
-
         ClientBehavior::PassAlreadyRregistered,
-        ClientBehavior::PassNeedMoreParams, 
+        ClientBehavior::PassNeedMoreParams,
         ClientBehavior::PassNotFirst,
-
         ClientBehavior::UserAlreadyRegistered,
         ClientBehavior::UserNeedMoreParams,
-
         ClientBehavior::InviteNeedMoreParams,
-        ClientBehavior::InviteNoSuchNick, 
-        ClientBehavior::InviteNotOnChannel, 
+        ClientBehavior::InviteNoSuchNick,
+        ClientBehavior::InviteNotOnChannel,
         ClientBehavior::InviteNoPriv,
         ClientBehavior::InviteNotRegistered,
-
         ClientBehavior::PrivmsgNoRecipient,
         ClientBehavior::PrivmsgNoTextToSend,
         // ClientBehavior::PrivmsgNoSuchChannel, //revooir ce test
         // ClientBehavior::PrivmsgCannotSendToChan,
         ClientBehavior::PrivmsgNoSuchNick,
-
         ClientBehavior::KickNeedMoreParams,
         // ClientBehavior::KickBadChanMask,
-        // ClientBehavior::KickNoSuchChannel, //a revoir 
+        // ClientBehavior::KickNoSuchChannel, //a revoir
         // ClientBehavior::KickChaNoPrivsNeeded,
         // ClientBehavior::KickUserNotInChannel,
-        
         ClientBehavior::JoinNeedMoreParams,
         ClientBehavior::JoinNoSuchChan,
         ClientBehavior::JoinNewChan,
@@ -143,7 +135,6 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         ClientBehavior::JoinExistingChanMdp,
         // ClientBehavior::JoinBadChannelKey,
         // ClientBehavior::JoinChannelIsFull,
-        
         ClientBehavior::TopicNeedMoreParams,
         ClientBehavior::TopicNotOnChannel,
         ClientBehavior::TopicNoTopic,

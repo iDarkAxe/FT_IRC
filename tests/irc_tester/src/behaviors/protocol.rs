@@ -91,7 +91,9 @@ pub async fn too_long_message(port: u16, timeout_ms: u64) -> Result<()> {
         if line.contains("Buffer limit") {
             return Ok(());
         }
-        return Err(anyhow::anyhow!("Server did not reject overly long message | received [{line}]"));
+        return Err(anyhow::anyhow!(
+            "Server did not reject overly long message | received [{line}]"
+        ));
     }
     Err(anyhow::anyhow!("Server closed connection without error"))
 }

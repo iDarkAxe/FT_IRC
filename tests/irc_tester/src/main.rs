@@ -6,9 +6,9 @@ mod tests;
 mod utils;
 use crate::tests::advanced_test::test_behaviors;
 use crate::tests::controle::controle_client;
-use crate::tests::controle::no_mdp_chan_client;
-use crate::tests::controle::mdp_chan_client;
 use crate::tests::controle::invite_chan_client;
+use crate::tests::controle::mdp_chan_client;
+use crate::tests::controle::no_mdp_chan_client;
 use tests::{advanced_stress_test, connection_stress_test};
 
 #[tokio::main]

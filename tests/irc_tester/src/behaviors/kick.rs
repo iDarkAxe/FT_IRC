@@ -10,7 +10,14 @@ pub async fn kick_need_more_params(port: u16, id: usize, timeout_ms: u64) -> Res
     let mut client = Client::connect(port).await?;
 
     client.authenticate(nick, timeout_ms).await?;
-    client.try_expect("KICK \r\n", " :Not enough parameters", "ERR_NEEDMOREPARAMS missing ", timeout_ms).await?;
+    client
+        .try_expect(
+            "KICK \r\n",
+            " :Not enough parameters",
+            "ERR_NEEDMOREPARAMS missing ",
+            timeout_ms,
+        )
+        .await?;
 
     // if let Some(line) = client.read_line_timeout(timeout_ms).await? {
     //     if line.starts_with("PING") {
@@ -18,7 +25,7 @@ pub async fn kick_need_more_params(port: u16, id: usize, timeout_ms: u64) -> Res
     //         client.send(&resp, 0).await?;
     //     }
     // }
-    
+
     client.shutdown().await?;
     Ok(())
 }
@@ -28,7 +35,14 @@ pub async fn kick_no_such_channel(port: u16, id: usize, timeout_ms: u64) -> Resu
     let mut client = Client::connect(port).await?;
 
     client.authenticate(nick, timeout_ms).await?;
-    client.try_expect("KICK #nosuchchannel user\r\n", " :No such channel", "ERR_NOSUCHCHAN missing ", timeout_ms).await?;
+    client
+        .try_expect(
+            "KICK #nosuchchannel user\r\n",
+            " :No such channel",
+            "ERR_NOSUCHCHAN missing ",
+            timeout_ms,
+        )
+        .await?;
 
     // if let Some(line) = client.read_line_timeout(timeout_ms).await? {
     //     if line.starts_with("PING") {

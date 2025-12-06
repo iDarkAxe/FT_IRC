@@ -6,7 +6,14 @@ pub async fn nick_normal_claim_and_change(port: u16, id: usize, timeout_ms: u64)
     let mut client = Client::connect(port).await?;
 
     client.authenticate(nick, timeout_ms).await?;
-    client.try_expect(&format!("NICK {}_claimed\r\n", id), "updated his nickname to", "Failed to update nickname ", timeout_ms).await?;
+    client
+        .try_expect(
+            &format!("NICK {}_claimed\r\n", id),
+            "updated his nickname to",
+            "Failed to update nickname ",
+            timeout_ms,
+        )
+        .await?;
     client.shutdown().await?;
 
     Ok(())
@@ -17,7 +24,14 @@ pub async fn nick_no_nickname_given(port: u16, id: usize, timeout_ms: u64) -> Re
     let mut client = Client::connect(port).await?;
 
     client.authenticate(nick, timeout_ms).await?;
-    client.try_expect("NICK\r\n", "No nickname given", "Failed to reject update ", timeout_ms).await?;
+    client
+        .try_expect(
+            "NICK\r\n",
+            "No nickname given",
+            "Failed to reject update ",
+            timeout_ms,
+        )
+        .await?;
     client.shutdown().await?;
 
     Ok(())
@@ -28,10 +42,15 @@ pub async fn nick_already_in_use(port: u16, id: usize, timeout_ms: u64) -> Resul
     let mut client = Client::connect(port).await?;
 
     client.authenticate(nick, timeout_ms).await?;
-    client.try_expect("NICK reserved_nick\r\n", "Nickname is already in use\r\n", "ERR_NICKALREADYINUSE missing ", timeout_ms).await?;
+    client
+        .try_expect(
+            "NICK reserved_nick\r\n",
+            "Nickname is already in use\r\n",
+            "ERR_NICKALREADYINUSE missing ",
+            timeout_ms,
+        )
+        .await?;
     client.shutdown().await?;
 
     Ok(())
 }
-
-
