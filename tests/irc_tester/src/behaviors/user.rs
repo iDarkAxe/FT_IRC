@@ -5,38 +5,18 @@ pub async fn user_already_registered(port: u16, id: usize, timeout_ms: u64) -> R
     let nick = format!("user_already_registered_{}", id);
     let mut client = Client::connect(port).await?;
 
-    client.send("PASS password\r\n", 0).await?;
-    client
-        .send(&format!("NICK {}\r\n", nick), 0)
-        .await?;
-    client
-        .send(&format!("USER {} 0 * :useralreadyregistered\r\n", nick), 0)
-        .await?;
+    client.authenticate(nick, timeout_ms).await?;
 
-    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
-        if !line.contains("Welcome to the Internet Relay Network") {
-            return Err(anyhow::anyhow!("Welcome message missing | received [{line}]"));
-        }
-    }
+    // if let Some(line) = client.read_line_timeout(timeout_ms).await? {
+    //     if line.starts_with("PING") {
+    //         let resp = line.replace("PING", "PONG");
+    //         client.send(&resp, 0).await?;
+    //     }
+    // }
 
-    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
-        if line.starts_with("PING") {
-            let resp = line.replace("PING", "PONG");
-            client.send(&resp, 0).await?;
-        }
-    }
-
-    client
-        .send(&format!("USER {}_no_nick 0 * :NoNick\r\n", nick), 0)
-        .await?;
-
-
-    if let Some(line) = client.read_line_timeout(timeout_ms).await? {
-        if !line.contains("Unauthorized command (already registered)") {
-            return Err(anyhow::anyhow!("ERR_ALREADYREGISTERED missing | received [{line}]"));
-        }
-    }
+    client.try_expect(&format!("USER {}_no_nick 0 * :NoNick\r\n", id),  "Unauthorized command (already registered)", "ERR_ALREADYREGISTERED missing ", timeout_ms).await?;
     client.shutdown().await?;
+
     Ok(())
 }
 

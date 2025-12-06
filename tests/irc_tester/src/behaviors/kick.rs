@@ -24,7 +24,7 @@ pub async fn kick_need_more_params(port: u16, id: usize, timeout_ms: u64) -> Res
 }
 
 pub async fn kick_no_such_channel(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
-    let channel = format!("Kick_no_such_chan_{}", id);
+    let nick = format!("Kick_no_such_chan_{}", id);
     let mut client = Client::connect(port).await?;
 
     client.authenticate(nick, timeout_ms).await?;
