@@ -1,10 +1,22 @@
 #include "KickCommand.hpp"
 #include "Channel.hpp"
 #include "Server.hpp"
+#include <sstream>
 
 KickCommand::KickCommand(std::vector<std::string> params)
 {
 	_params = params;
+}
+
+std::vector<std::string> split_param(std::string params) {
+  std::vector<std::string> vec;
+  std::istringstream iss(params);
+  std::string token;
+  
+  while (std::getline(iss, token, ',')) {
+      vec.push_back(token);
+  }
+  return vec;
 }
 
 // _params[0] -> #a,#b,#c 
@@ -22,27 +34,21 @@ void KickCommand::execute(Client* executor, Server& server)
 		return;
 	}
 
-	std::vector<std::string> chans;
-	std::vector<std::string> users;
+	std::vector<std::string> chans = split_param(_params[0]);
+	std::vector<std::string> users = split_param(_params[1]);
 	std::string kick_msg = "";
-	int count = 0;;
-	for (size_t i = 1; i < _params.size(); ++i) {
-    if(_params[i][0] != '#')
-    	break;
-    chans.push_back(_params[i]);
-    count++;
+	if (_params.size() == 3) {
+		kick_msg = _params[2];
 	}
-	for (size_t i = count; i < _params.size(); ++i) {
-		if (_params[i][0] == ':')
-		{
-			kick_msg = _params[i];
-			break;
-		}
-		users.push_back(_params[i]);
+
+	if (chans.size() != users.size()) {
+		//BADCHANMASK ?
+		return;
 	}
-	for (size_t i = 0; i < users.size(); ++i) {
+
+	for (size_t i = 0; i < chans.size(); ++i) {
 		Channel* chan = server.getChannel(chans[i]);
-		if (!chan || chans[i].empty() || (chans[i][0] != '#' && chans[i][0] != '&'))
+		if (!chan || (chans[i][0] != '#' && chans[i][0] != '&' && chans[i].size() < 2))
 		{
 			server.reply(executor, ERR_NOSUCHCHANNEL(executor->getNickname(), _params[i]));
 			continue;
@@ -57,15 +63,19 @@ void KickCommand::execute(Client* executor, Server& server)
 			server.reply(executor, ERR_CHANOPRIVSNEEDED(executor->getNickname(), _params[i]));
 			continue;
 		}
+	}
+
+	for (size_t i = 0; i < users.size(); ++i) {
 		Client* target = server.getClient(users[i]);
+		Channel* chan = server.getChannel(chans[i]);
 		if (!chan->isClientInChannel(target))
 		{
 			server.reply(executor, ERR_USERNOTINCHANNEL(executor->getNickname(), users[i], chans[i]));
 		}
-		// std::stringstream ss;
-		// ss << ":" << executor->getNickname() << "!~" << executor->getUsername() << "@" << executor.getIp() 
-		// 	<< " KICK " << chan->getName() << target->getNickname() << " :" << target->getNickname();
-		// server.replyChannel(chan, ss.str());
+		std::stringstream ss;
+		ss << ":" << executor->getNickname() << "!~" << executor->getUsername() << "@" << executor->getRealname() // realname et pas ip ?
+			<< " KICK " << chan->getName() << target->getNickname() << " :" << target->getNickname();
+		server.replyChannel(chan, ss.str());
 	}
 	return;
 }
