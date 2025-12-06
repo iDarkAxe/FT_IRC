@@ -74,6 +74,11 @@ pub enum ClientBehavior {
 
     //topic
     TopicNeedMoreParams,
+    TopicNotOnChannel,
+    TopicNoTopic,
+    // TopicRpl,
+    // TopicNoPriv,
+    // TopicNoChanModes,
 }
 
 pub struct Client {

@@ -76,6 +76,11 @@ async fn run_client(
         // ClientBehavior::JoinChannelIsFull => join_channel_is_full(port, id, timeout_ms).await,
 
         ClientBehavior::TopicNeedMoreParams => topic_need_more_params(port, id, timeout_ms).await,
+        ClientBehavior::TopicNotOnChannel => topic_not_on_chan(port, id, timeout_ms).await,
+        ClientBehavior::TopicNoTopic => topic_no_topic(port, id, timeout_ms).await,
+        // ClientBehavior::TopicRpl => topic_reply(port, id, timeout_ms).await,
+        // ClientBehavior::TopicNoPriv => topic_no_priv(port, id, timeout_ms).await,
+        // ClientBehavior::TopicNoChanModes => topic_no_chan_modes(port, id, timeout_ms).await,
     };
 
     let reply_time = Instant::now() - start_time;
@@ -142,6 +147,11 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         // ClientBehavior::JoinChannelIsFull,
         
         ClientBehavior::TopicNeedMoreParams,
+        ClientBehavior::TopicNotOnChannel,
+        ClientBehavior::TopicNoTopic,
+        // ClientBehavior::TopicRpl,
+        // ClientBehavior::TopicNoPriv,
+        // ClientBehavior::TopicNoChanModes,
     ];
 
     let mut futures: FuturesUnordered<_> = behaviors
