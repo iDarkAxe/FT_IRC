@@ -2,6 +2,14 @@ use crate::client::Client;
 use anyhow::Result;
 use tokio::time::Duration;
 
+pub async fn legit_disconnect(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
+    let nick = format!("legit_disco_{}", id);
+    let mut client = Client::connect(port).await?;
+    client.authenticate(nick, timeout_ms).await?;
+    client.shutdown().await?;
+    Ok(())
+}
+
 pub async fn fragmented_messages(port: u16, _debug: bool, id: usize) -> Result<()> {
     let mut client = Client::connect(port).await?;
 

@@ -1,4 +1,3 @@
-pub mod connection;
 pub mod invite;
 pub mod join;
 // pub mod kick;
@@ -16,7 +15,6 @@ pub use kick::*;
 pub use nick::*;
 pub use pass::*;
 pub use user::*;
-pub use connection::*;
 pub use invite::*;
 pub use join::*;
 // pub use kick::*;

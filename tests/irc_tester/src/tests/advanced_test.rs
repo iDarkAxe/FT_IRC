@@ -17,7 +17,6 @@ async fn run_client(
 ) -> ClientResult {
     let start_time = Instant::now();
     let result: anyhow::Result<()> = match behavior {
-        ClientBehavior::NormalConnection => normal_connection(port, false, id).await,
         ClientBehavior::FragmentedMessages => fragmented_messages(port, false, id).await,
         ClientBehavior::LowBandwidth => low_bandwidth(port, false, id).await,
         ClientBehavior::LegitDisconnect => legit_disconnect(port, id, timeout_ms).await,
@@ -99,7 +98,6 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         ClientBehavior::PongOnly,
         ClientBehavior::WrongPong,
         ClientBehavior::PongWithoutConnect,
-        ClientBehavior::NormalConnection,
         ClientBehavior::WrongPassword,
         ClientBehavior::FragmentedMessages,
         ClientBehavior::LowBandwidth,
@@ -191,7 +189,6 @@ pub async fn advanced_stress_test(port: u16, num_clients: usize, timeout_ms: u64
 
     let behaviors = vec![
         ClientBehavior::LegitDisconnect,
-        ClientBehavior::NormalConnection,
         // ClientBehavior::WrongPassword, //should be kicked
         // ClientBehavior::FragmentedMessages,
         // ClientBehavior::LowBandwidth,
