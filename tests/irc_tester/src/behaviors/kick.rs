@@ -5,6 +5,21 @@ use anyhow::Result;
 // ClientBehavior::KickChaNoPrivsNeeded,
 // ClientBehavior::KickUserNotInChannel,
 
+pub async fn kick_not_registered(port: u16, _id: usize, timeout_ms: u64) -> Result<()> {
+    let mut client = Client::connect(port).await?;
+    client.send("PASS password\r\n", 0).await?;
+    client
+        .try_expect(
+            "KICK\r\n",
+            " :You have not registered",
+            "ERR_NOTREGISTERED missing",
+            timeout_ms,
+        )
+        .await?;
+    client.shutdown().await?;
+    Ok(())
+}
+
 pub async fn kick_need_more_params(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
     let nick = format!("kickneedmorep_{}", id);
     let mut client = Client::connect(port).await?;
@@ -18,14 +33,6 @@ pub async fn kick_need_more_params(port: u16, id: usize, timeout_ms: u64) -> Res
             timeout_ms,
         )
         .await?;
-
-    // if let Some(line) = client.read_line_timeout(timeout_ms).await? {
-    //     if line.starts_with("PING") {
-    //         let resp = line.replace("PING", "PONG");
-    //         client.send(&resp, 0).await?;
-    //     }
-    // }
-
     client.shutdown().await?;
     Ok(())
 }
@@ -43,13 +50,6 @@ pub async fn kick_no_such_channel(port: u16, id: usize, timeout_ms: u64) -> Resu
             timeout_ms,
         )
         .await?;
-
-    // if let Some(line) = client.read_line_timeout(timeout_ms).await? {
-    //     if line.starts_with("PING") {
-    //         let resp = line.replace("PING", "PONG");
-    //         client.send(&resp, 0).await?;
-    //     }
-    // }
     client.shutdown().await?;
     Ok(())
 }

@@ -83,7 +83,7 @@ pub async fn invite_no_priv(port: u16, id: usize, timeout_ms: u64) -> Result<()>
     Ok(())
 }
 
-pub async fn invite_not_registered(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
+pub async fn invite_not_registered(port: u16, _id: usize, timeout_ms: u64) -> Result<()> {
     let mut client = Client::connect(port).await?;
     client
         .try_expect(

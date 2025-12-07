@@ -29,6 +29,8 @@ async fn main() -> Result<()> {
     let no_mdp_chan_handle = tokio::spawn(no_mdp_chan_client(port, timeout));
     let mdp_chan_handle = tokio::spawn(mdp_chan_client(port, timeout));
     let invite_chan_handle = tokio::spawn(invite_chan_client(port, timeout));
+    let privmsg_client_nick_handle = tokio::spawn(privmsg_client_nick(port, timeout));
+    let privmsg_client_chan_handle = tokio::spawn(privmsg_client_chan(port, timeout));
 
     if stress_mode == 0 {
         let _ = test_behaviors(port, 0).await;
@@ -43,6 +45,8 @@ async fn main() -> Result<()> {
     no_mdp_chan_handle.abort();
     mdp_chan_handle.abort();
     invite_chan_handle.abort();
+    privmsg_client_chan_handle.abort();
+    privmsg_client_nick_handle.abort();
 
     Ok(())
 }

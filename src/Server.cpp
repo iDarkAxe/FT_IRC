@@ -16,9 +16,9 @@
 
 // #define USE_FULL_CLIENT
 // #define USE_TESTER
-#ifdef USE_TESTER
-#define USE_FULL_CLIENT
-#endif
+// #ifdef USE_TESTER
+// #define USE_FULL_CLIENT
+// #endif
 
 Server::~Server()
 {
@@ -149,9 +149,9 @@ void Server::initClient(int client_fd, const std::string &ip_str, uint16_t port)
 	c.port = port;
 	// the client object contains
 	this->clients.insert(std::make_pair(client_fd, c));
-	// std::stringstream ss;
-	// ss << "New client: " << client_fd;
-	// Debug::print(DEBUG, ss.str());
+	std::stringstream ss;
+	ss << "New client: " << client_fd;
+	Debug::print(DEBUG, ss.str());
 }
 
 // for each call to accept with our server fd, if there is a client to register, it will returns a > 0 fd
@@ -186,7 +186,7 @@ void Server::new_client()
 		uint16_t port = ntohs(client_addr.sin_port);
 		inet_ntop(AF_INET, &client_addr.sin_addr, ip_str, sizeof(ip_str));
 		initClient(client_fd, ip_str, port);
-		this->clients[client_fd].printClientSocketInfo();
+		// this->clients[client_fd].printClientSocketInfo();
 	}
 }
 
@@ -308,7 +308,7 @@ void Server::is_authentification_complete(int fd)
 		this->reply(&client, RPL_WELCOME(client.getNickname(), client.getHost()));
 		client.setRegistered();
 		ss << clients[fd].getUsername() << " aka " << clients[fd].getNickname() << " successfully connected";
-		client.printClientIRCInfo();
+		// client.printClientIRCInfo();
 		Debug::print(DEBUG, ss.str());
 	}
 }
@@ -443,10 +443,10 @@ int Server::RunServer()
 		}
 		handle_events(n, events);
 		deleteUnusedChannels();
-		#ifdef USE_FULL_CLIENT
+		// #ifdef USE_FULL_CLIENT
 		this->check_clients_ping();		 // si on n'a pas eu de signe d'activite depuis trop longtemps
 		this->remove_inactive_clients(); // remove inactive localUsers after a unanswered ping
-		#endif
+		// #endif
 	}
 	close(this->_server_socket);
 	close(this->_epfd);

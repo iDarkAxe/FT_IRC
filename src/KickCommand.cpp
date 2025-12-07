@@ -27,8 +27,10 @@ static std::vector<std::string> split_param(std::string params)
 void KickCommand::execute(Client* executor, Server& server)
 {
 	if (!executor->isRegistered())
+	{
+		server.reply(executor, ERR_NOTREGISTERED(executor->getNickname()));
 		return;
-
+	}
 	if (_params.size() < 2)
 	{
 		server.reply(executor, ERR_NEEDMOREPARAMS(executor->getNickname(), "KICK"));
