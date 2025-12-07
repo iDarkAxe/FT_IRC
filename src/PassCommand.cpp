@@ -28,7 +28,6 @@ void PassCommand::execute(Client *executor, Server &server)
 	if (_params[0] == server.getPassword())
 	{
 		executor->setPasswordCorrect();
-		;
 	}
 	else
 	{

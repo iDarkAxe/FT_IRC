@@ -8,7 +8,8 @@ KickCommand::KickCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-std::vector<std::string> split_param(std::string params) {
+static std::vector<std::string> split_param(std::string params)
+{
   std::vector<std::string> vec;
   std::istringstream iss(params);
   std::string token;

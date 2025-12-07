@@ -11,7 +11,7 @@ protected:
 //= Methods =//
 public:
 	KickCommand(std::vector<std::string> params);
-	~KickCommand() {};
+	~KickCommand() {}
 	void execute(Client* executor, Server& server);
 };
 
