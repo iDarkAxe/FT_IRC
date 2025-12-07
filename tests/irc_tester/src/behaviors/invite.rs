@@ -25,7 +25,7 @@ pub async fn invite_not_on_channel(port: u16, id: usize, timeout_ms: u64) -> Res
     client.authenticate(nick, timeout_ms).await?;
     client
         .try_expect(
-            "INVITE reserved_nick #channel\r\n",
+            "INVITE reserved_nick #no_mdp_chan\r\n",
             " :You're not on that channel",
             "ERR_NOTONCHANNEL missing",
             timeout_ms,
@@ -84,7 +84,6 @@ pub async fn invite_no_priv(port: u16, id: usize, timeout_ms: u64) -> Result<()>
 }
 
 pub async fn invite_not_registered(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
-    let nick = format!("{}_not_registered", id);
     let mut client = Client::connect(port).await?;
     client
         .try_expect(
