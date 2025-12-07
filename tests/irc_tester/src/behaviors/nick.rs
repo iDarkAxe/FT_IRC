@@ -37,15 +37,12 @@ pub async fn nick_no_nickname_given(port: u16, id: usize, timeout_ms: u64) -> Re
     Ok(())
 }
 
-pub async fn nick_already_in_use(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
-    let nick = format!("{}_nickalreadyinuse", id);
+pub async fn nick_already_in_use(port: u16, _id: usize, timeout_ms: u64) -> Result<()> {
     let mut client = Client::connect(port).await?;
-
-    client.authenticate(nick, timeout_ms).await?;
     client
         .try_expect(
-            "NICK reserved_nick\r\n",
-            "Nickname is already in use\r\n",
+            "PASS password\r\nNICK reserved_nick\r\n",
+            "Nickname is already in use",
             "ERR_NICKALREADYINUSE missing ",
             timeout_ms,
         )

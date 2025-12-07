@@ -106,7 +106,7 @@ pub async fn privmsg_client(port: u16, timeout_ms: u64) -> Result<()> {
                 }
                 else {
                     //checker si chan / user -> repondre ne fct
-                    client.send(&format!("PRIVMSG #privmsg_chan :{l}", l), 0)
+                    let _ = client.send(&format!("PRIVMSG #privmsg_chan :{l}"), 0).await;
                 }
             }
             _ => {

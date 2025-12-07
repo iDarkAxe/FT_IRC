@@ -86,10 +86,9 @@ pub async fn invite_no_priv(port: u16, id: usize, timeout_ms: u64) -> Result<()>
 pub async fn invite_not_registered(port: u16, id: usize, timeout_ms: u64) -> Result<()> {
     let nick = format!("{}_not_registered", id);
     let mut client = Client::connect(port).await?;
-    client.authenticate(nick, timeout_ms).await?;
     client
         .try_expect(
-            "INVITE reserved_nick #join_no_priv\r\n",
+            "PASS password\r\nINVITE reserved_nick #join_no_priv\r\n",
             " :You have not registered",
             "ERR_NOTREGISTERED missing",
             timeout_ms,
