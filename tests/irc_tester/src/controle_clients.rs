@@ -2,15 +2,11 @@ use crate::client::Client;
 use anyhow::Result;
 use tokio::time::{Duration, sleep};
 
-pub async fn reserved_nick_client(port: u16) -> Result<()> {
+pub async fn reserved_nick_client(port: u16, timeout_ms: u64) -> Result<()> {
     let mut client = Client::connect(port).await?;
+    let nick = "reserved_nick".to_string();
 
-    client.send("PASS password\r\n", 0).await?;
-    client.send("NICK reserved_nick\r\n", 0).await?;
-    client
-        .send("USER reserved_nick 0 * :reserved_nick\r\n", 0)
-        .await?;
-
+    client.authenticate(nick, timeout_ms).await?;
     loop {
         match client.read_line_timeout(1000).await {
             Ok(Some(l)) => {
@@ -26,22 +22,11 @@ pub async fn reserved_nick_client(port: u16) -> Result<()> {
     }
 }
 
-pub async fn no_mdp_chan_client(port: u16) -> Result<()> {
+pub async fn no_mdp_chan_client(port: u16, timeout_ms: u64) -> Result<()> {
     let mut client = Client::connect(port).await?;
+    let nick = "no_mdp_chan_client".to_string();
 
-    client.send("PASS password\r\n", 0).await?;
-    client.send("NICK no_mdp_chan_client\r\n", 0).await?;
-    client
-        .send("USER no_mdp_chan_client 0 * :no_mdp_chan_client\r\n", 0)
-        .await?;
-
-    if let Some(line) = client.read_line_timeout(1000).await? {
-        if !line.contains("Welcome to the Internet Relay Network") {
-            return Err(anyhow::anyhow!(
-                "Welcome message missing | received [{line}]"
-            ));
-        }
-    }
+    client.authenticate(nick, timeout_ms).await?;
     client.send("JOIN #no_mdp_chan\r\n", 0).await?;
 
     loop {
@@ -59,24 +44,12 @@ pub async fn no_mdp_chan_client(port: u16) -> Result<()> {
     }
 }
 
-pub async fn mdp_chan_client(port: u16) -> Result<()> {
+pub async fn mdp_chan_client(port: u16, timeout_ms: u64) -> Result<()> {
     let mut client = Client::connect(port).await?;
+    let nick = "mdp_chan_client".to_string();
 
-    client.send("PASS password\r\n", 0).await?;
-    client.send("NICK mdp_chan_client\r\n", 0).await?;
-    client
-        .send("USER mdp_chan_client 0 * :mdp_chan_client\r\n", 0)
-        .await?;
-
-    if let Some(line) = client.read_line_timeout(1000).await? {
-        if !line.contains("Welcome to the Internet Relay Network") {
-            return Err(anyhow::anyhow!(
-                "Welcome message missing | received [{line}]"
-            ));
-        }
-    }
+    client.authenticate(nick, timeout_ms).await?;
     client.send("JOIN #mdp_chan\r\n", 0).await?;
-
     client.send("MODE #mdp_chan +k chan\r\n", 0).await?;
 
     loop {
@@ -94,24 +67,12 @@ pub async fn mdp_chan_client(port: u16) -> Result<()> {
     }
 }
 
-pub async fn invite_chan_client(port: u16) -> Result<()> {
+pub async fn invite_chan_client(port: u16, timeout_ms: u64) -> Result<()> {
     let mut client = Client::connect(port).await?;
+    let nick = "invite_chan_client".to_string();
 
-    client.send("PASS password\r\n", 0).await?;
-    client.send("NICK invite_chan_client\r\n", 0).await?;
-    client
-        .send("USER invite_chan_client 0 * :invite_chan_client\r\n", 0)
-        .await?;
-
-    if let Some(line) = client.read_line_timeout(1000).await? {
-        if !line.contains("Welcome to the Internet Relay Network") {
-            return Err(anyhow::anyhow!(
-                "Welcome message missing | received [{line}]"
-            ));
-        }
-    }
+    client.authenticate(nick, timeout_ms).await?;
     client.send("JOIN #invite_chan\r\n", 0).await?;
-
     client.send("MODE #invite_chan +i\r\n", 0).await?;
 
     loop {

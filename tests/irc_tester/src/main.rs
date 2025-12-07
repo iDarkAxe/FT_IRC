@@ -22,20 +22,21 @@ fn parse() -> (usize, usize, usize) {
 #[tokio::main]
 async fn main() -> Result<()> {
     let port = 6667;
+    let timeout = 0; 
     let (num_clients, stress_mode, beh_mode) = parse();
 
-    let controle_handle = tokio::spawn(reserved_nick_client(port));
-    let no_mdp_chan_handle = tokio::spawn(no_mdp_chan_client(port));
-    let mdp_chan_handle = tokio::spawn(mdp_chan_client(port));
-    let invite_chan_handle = tokio::spawn(invite_chan_client(port));
+    let controle_handle = tokio::spawn(reserved_nick_client(port, timeout));
+    let no_mdp_chan_handle = tokio::spawn(no_mdp_chan_client(port, timeout));
+    let mdp_chan_handle = tokio::spawn(mdp_chan_client(port, timeout));
+    let invite_chan_handle = tokio::spawn(invite_chan_client(port, timeout));
 
     if stress_mode == 0 {
         let _ = test_behaviors(port, 0).await;
     }
     if beh_mode == 0 {
         // let connection_stress_handle = tokio::spawn(connection_stress_test(port, num_clients, 0));
-        connection_stress_test(port, num_clients, 0).await?;
-        advanced_stress_test(port, num_clients, 0).await?;
+        connection_stress_test(port, num_clients, timeout).await?;
+        advanced_stress_test(port, num_clients, timeout).await?;
     }
 
     controle_handle.abort();

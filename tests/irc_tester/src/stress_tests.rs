@@ -16,11 +16,10 @@ pub async fn run_client(
     behavior: ClientBehavior,
     timeout_ms: u64,
 ) -> ClientResult {
-    let start = Instant::now();
 
     let handler = behavior.handler();
+    let start = Instant::now();
     let result = handler(port, id, timeout_ms).await;
-
     let reply = Instant::now() - start;
 
     match result {
