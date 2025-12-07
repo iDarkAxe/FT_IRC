@@ -3,11 +3,12 @@
 #include <cstring>
 #include <sstream>
 
-Client::Client() : _key(""), _nickname(""), _username(""), _realname(""), _host(""), _last_seen(0), _password_correct(false), _registered(false), fd(-1), rbuf(""), wbuf(""), last_ping(0), timeout(0), connection_time(0)
+Client::Client() : _key(""), _nickname(""), _username(""), _realname(""), _host(""), _last_seen(0), _password_correct(false), _registered(false), fd(-1), rbuf(""), wbuf(""), hasTriggeredEPOLLOUT(false), last_ping(0), timeout(0), connection_time(0), ip_address(""), port(0)
 {
+	std::memset(&_mode, 0, sizeof(ClientModes));
 }
 
-Client::Client(Client const &other) : _key(other._key), _nickname(other._nickname), _username(other._username), _realname(other._realname), _mode(other._mode), _host(other._host), _last_seen(other._last_seen), _password_correct(other._password_correct), _registered(other._registered), fd(other.fd), rbuf(other.rbuf), wbuf(other.wbuf), last_ping(other.last_ping), timeout(other.timeout), connection_time(other.connection_time)
+Client::Client(Client const &other) : _key(other._key), _nickname(other._nickname), _username(other._username), _realname(other._realname), _mode(other._mode), _host(other._host), _last_seen(other._last_seen), _password_correct(other._password_correct), _registered(other._registered), fd(other.fd), rbuf(other.rbuf), wbuf(other.wbuf), hasTriggeredEPOLLOUT(other.hasTriggeredEPOLLOUT), last_ping(other.last_ping), timeout(other.timeout), connection_time(other.connection_time), ip_address(other.ip_address), port(other.port)
 {
 	// Copy constructor
 }
@@ -23,36 +24,54 @@ void Client::clear()
 	this->_username.clear();
 	this->_realname.clear();
 	this->_host.clear();
+	this->rbuf.clear();
+	this->wbuf.clear();
 	memset(&this->_mode, 0, sizeof(ClientModes));
 	this->_last_seen = 0;
 	this->_password_correct = false;
 	this->_registered = false;
 }
 
-void Client::printClientInfo()
+void Client::printClientIRCInfo()
 {
 	std::stringstream ss;
-	Debug::print(INFO, "Client Info:");
-	Debug::print(INFO, "Key: " + this->_key);
-	Debug::print(INFO, "Type: Local");
-	ss << "\tFD: " << this->fd;
-	Debug::print(INFO, ss.str());
-	Debug::print(INFO, "Nickname: " + this->_nickname);
-	Debug::print(INFO, "Username: " + this->_username);
-	Debug::print(INFO, "Realname: " + this->_realname);
-	Debug::print(INFO, "Host: " + this->_host);
+	ss << "Client IRC Info:"
+	   << "\n\tKey: " << this->_key
+	   << "\n\tType: Local FD: " << this->fd
+	   << "\n\tNickname: " << this->_nickname
+	   << "\n\tUsername: " << this->_username
+	   << "\n\tRealname: " << this->_realname
+	   << "\n\tHost: " << this->_host;
 	int mode_flags = 0;
 	if (this->_mode.is_invisible)
 		mode_flags |= 0x01;
 	if (this->_mode.is_operator)
 		mode_flags |= 0x02;
-	ss << "Mode: " << mode_flags;
+	ss << "\n\tMode: " << mode_flags
+	   << "\n\tLast Seen: " << this->_last_seen
+	   << "\n\tPassword Correct: " << std::string(this->_password_correct ? "true" : "false")
+	   << "\n\tRegistered: " << std::string(this->_registered ? "true" : "false")
+	   << "\n\tEnd of Client Info";
 	Debug::print(INFO, ss.str());
-	ss.str("");
-	ss << "Last Seen: " << this->_last_seen;
+}
+
+void Client::printClientSocketInfo()
+{
+	std::stringstream ss;
+	ss << "Client Socket Info:"
+	   << "\n\tKey: " << this->_key;
+	if (this->rbuf.find("\r\n") != std::string::npos)
+		ss << "\n\tRBUF: " << this->rbuf.substr(0, this->rbuf.size() - 2);
+	else
+		ss << "\n\tRBUF: " << this->rbuf;
+	if (this->rbuf.find("\r\n") != std::string::npos)
+		ss << "\n\tWBUF: " << this->wbuf.substr(0, this->wbuf.size() - 2);
+	else
+		ss << "\n\tWBUF: " << this->wbuf;
+	ss << "\n\tHas Triggered EPOLLOUT: " << std::string(this->hasTriggeredEPOLLOUT ? "true" : "false")
+	   << "\n\tIP Address: " << this->ip_address
+	   << "\n\tPort: " << this->port;
 	Debug::print(INFO, ss.str());
-	Debug::print(INFO, "Password Correct: " + std::string(this->_password_correct ? "true" : "false"));
-	Debug::print(INFO, "Registered: " + std::string(this->_registered ? "true" : "false"));
 }
 
 void Client::setKey(const std::string &key)

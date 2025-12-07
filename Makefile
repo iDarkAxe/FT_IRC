@@ -42,6 +42,9 @@ INC = \
 	PrivmsgCommand.hpp \
 	KickCommand.hpp \
 	ModeCommand.hpp \
+	PartCommand.hpp \
+	QuitCommand.hpp \
+	TimeCommand.hpp \
 	Server_utils.h \
 	Client.hpp \
 	Channel.hpp \
@@ -67,6 +70,9 @@ SRC = \
 	PrivmsgCommand.cpp \
 	KickCommand.cpp \
 	ModeCommand.cpp \
+	PartCommand.cpp \
+	QuitCommand.cpp \
+	TimeCommand.cpp \
 	utils.cpp \
 	Server.cpp \
 	ServerIRC.cpp \
@@ -176,6 +182,7 @@ endif
 # Aliases
 clear: clean
 fclear: fclean
+fclena: fclean
 flcean: fclean
 flcear: fclean
 

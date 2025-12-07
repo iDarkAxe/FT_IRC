@@ -12,32 +12,42 @@ bool Server::reply(Client *client, std::string message)
 		Debug::print(ERROR, "No client given");
 		return false;
 	}
+	if (client->hasTriggeredEPOLLOUT)
+		disable_epollout(client->fd);
 	std::string &wbuf = client->wbuf;
 	if (!message.empty())
 		wbuf.append(message).append("\r\n");
 	while (!wbuf.empty())
 	{
 		ssize_t n = send(client->fd, wbuf.c_str(), wbuf.size(), 0);
-
+		int error = errno;
 		if (n > 0)
 		{
 			Debug::print(INFO, "Reply to " + client->getNickname() + ": " + wbuf.substr(0, static_cast<size_t>(n - 1)));
 			wbuf.erase(0, static_cast<size_t>(n));
 		}
-		// socket buffer full
-		else if (n == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+		else if (n < 0)
 		{
-			Debug::print(INFO, "The message couldn't be send in one try, retrying next time");
-			enable_epollout(client->fd);
-			return 0;
+			if (error == EAGAIN || error == EWOULDBLOCK)
+			{
+				Debug::print(INFO, "The message couldn't be send in one try, retrying next time");
+				enable_epollout(client->fd);
+				return 0;
+			}
+			else if (error == EPIPE)
+			{
+				Debug::print(WARNING, "SIGPIPE received while sending message to client " + client->getNickname());
+				removeClient(client);			
+				return false;
+			}
 		}
-		else
+		else // n == 0
 		{
-			// error or client disconnected -> Un client qu'on a deja kick
-			std::cerr << "[ERROR] failed to send [" << message << "] error on fd " << client->fd << "\n";
-			epoll_ctl(_epfd, EPOLL_CTL_DEL, client->fd, NULL);
-			close(client->fd);
-			clients.erase(client->fd);
+			// error as send shouldn't return 0 or client disconnected?
+			std::stringstream ss;
+			ss << "Disconnected: send error on fd(" << client->fd << ") with errno(" << error << ")";
+			Debug::print(ERROR, ss.str());
+			removeClient(client);
 			return false;
 		}
 	}
@@ -86,7 +96,7 @@ void Server::remove_inactive_clients()
 {
 	std::time_t now = std::time(NULL);
 	std::vector<int> to_erase;
-	for (std::map<int, Client>::iterator it = this->clients.begin();
+	for (clientsIterator it = this->clients.begin();
 		 it != this->clients.end(); it++)
 	{
 		// if (!it->second)
@@ -115,16 +125,12 @@ void Server::remove_inactive_clients()
 		}
 	}
 	for (std::vector<int>::iterator it = to_erase.begin(); it != to_erase.end(); it++)
-	{
-		// std::cout << "it = " << *it << std::endl;
-		if (clients.find(*it) != clients.end()) 
-			removeLocalUser(*it);
-	}
+		removeClient(*it);
 }
 
 void Server::check_clients_ping()
 {
-	for (std::map<int, Client>::iterator it = this->clients.begin();
+	for (clientsIterator it = this->clients.begin();
 		 it != this->clients.end(); ++it)
 	{
 		// if (!it->second)
@@ -151,7 +157,7 @@ void Server::check_clients_ping()
 
 Client *Server::getClient(const std::string &nickname)
 {
-	for (std::map<int, Client>::iterator it = this->clients.begin(); it != this->clients.end(); ++it)
+	for (clientsIterator it = this->clients.begin(); it != this->clients.end(); ++it)
 	{
 		if (it->second.getNickname() == nickname)
 			return &(it->second);
@@ -184,4 +190,42 @@ bool Server::addChannel(const std::string &channel_name)
 		return true;
 	}
 	return false;
+}
+
+bool Server::removeChannel(const std::string &channel_name)
+{
+	if (channel_name.empty() || channel_name[0] != '#')
+		return false;
+	std::map<std::string, Channel *>::iterator it = channels.find(channel_name);
+	if (it != channels.end())
+	{
+		delete it->second;
+		channels.erase(it);
+		return true;
+	}
+	return false;
+}
+
+void Server::deleteUnusedChannels()
+{
+	static std::time_t last = std::time(NULL);
+	std::time_t now = std::time(NULL);
+
+	if (now - last < FLUSH_CHANNEL_INTERVAL)
+		return;
+	last = now;
+	std::vector<std::string> to_delete;
+	for (channelsIterator it = channels.begin(); it != channels.end(); ++it)
+	{
+		Channel *channel = it->second;
+		if (channel->getClients().empty())
+		{
+			to_delete.push_back(it->first);
+		}
+	}
+	for (size_t i = 0; i < to_delete.size(); ++i)
+	{
+		Debug::print(INFO, "Deleting unused channel: " + to_delete[i]);
+		removeChannel(to_delete[i]);
+	}
 }
