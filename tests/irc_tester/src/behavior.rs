@@ -57,7 +57,6 @@ pub enum ClientBehavior {
     InviteNeedMoreParams,
     InviteNoSuchNick,
     InviteNotOnChannel,
-    InviteNoPriv,
     InviteNotRegistered,
 
     //privmsg
@@ -74,7 +73,7 @@ pub enum ClientBehavior {
 
     //kick
     // KickBadChanMask,
-    KickNoSuchChannel, // -> segfault : isClientInChannel Channel.cpp 108 (invalid read of size)
+    KickNoSuchChannel,
     KickNeedMoreParams,
     KickNotRegistered,
     // KickChaNoPrivsNeeded,
@@ -110,6 +109,9 @@ pub enum ClientBehavior {
     TimeWithParams,
     TimeCheckTimeZone,
     TimeNotRegistered,
+
+    InviteModeIJoin,
+    KickPriv,
 }
 
 impl BehaviorHandler for ClientBehavior {
@@ -117,7 +119,6 @@ impl BehaviorHandler for ClientBehavior {
         use ClientBehavior::*;
 
         match self {
-            // connection
             FragmentedMessages => |p, id, _| Box::pin(fragmented_messages(p, false, id)),
             LowBandwidth => |p, id, _| Box::pin(low_bandwidth(p, false, id)),
             LegitDisconnect => |p, id, t| Box::pin(legit_disconnect(p, id, t)),
@@ -145,7 +146,6 @@ impl BehaviorHandler for ClientBehavior {
             InviteNeedMoreParams => |p, id, t| Box::pin(invite_need_more_params(p, id, t)),
             InviteNoSuchNick => |p, id, t| Box::pin(invite_no_such_nick(p, id, t)), //
             InviteNotOnChannel => |p, id, t| Box::pin(invite_not_on_channel(p, id, t)),
-            InviteNoPriv => |p, id, t| Box::pin(invite_no_priv(p, id, t)),
             InviteNotRegistered => |p, id, t| Box::pin(invite_not_registered(p, id, t)),
 
             PrivmsgNoRecipient => |p, id, t| Box::pin(privmsg_no_recipient(p, id, t)),
@@ -190,6 +190,10 @@ impl BehaviorHandler for ClientBehavior {
             TimeWithParams => |p, id, t| Box::pin(time_with_params(p, id, t)),
             TimeCheckTimeZone => |p, id, t| Box::pin(time_check_answer(p, id, t)),
             TimeNotRegistered => |p, id, t| Box::pin(time_not_registered(p, id, t)),
+
+
+            KickPriv => |p, id, t| Box::pin(kick_priviledges(p, id, t)),
+            InviteModeIJoin => |p, id, t| Box::pin(invite_mode_i_join(p, id, t)),
         }
     }
 }

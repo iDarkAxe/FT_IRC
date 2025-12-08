@@ -52,7 +52,6 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         ClientBehavior::InviteNeedMoreParams,
         ClientBehavior::InviteNoSuchNick,
         ClientBehavior::InviteNotOnChannel,
-        ClientBehavior::InviteNoPriv,
         ClientBehavior::InviteNotRegistered,
         ClientBehavior::PrivmsgNoRecipient,
         ClientBehavior::PrivmsgNoTextToSend,
@@ -96,6 +95,9 @@ pub async fn test_behaviors(port: u16, timeout_ms: u64) -> Result<()> {
         ClientBehavior::TimeWithParams,
         ClientBehavior::TimeCheckTimeZone,
         ClientBehavior::TimeNotRegistered,
+
+        ClientBehavior::InviteModeIJoin,
+        ClientBehavior::KickPriv,
     ];
 
     let mut futures: FuturesUnordered<_> = behaviors

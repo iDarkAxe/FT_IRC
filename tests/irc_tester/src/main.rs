@@ -53,28 +53,10 @@ async fn main() -> Result<()> {
 
 //Todo
 //
-//INVITE :
-// - Normal : 2 clients, one inviting in an chan, another not in this chan
-// - RPL_INVITING
-// - CHANOPRIVSNEEDED
-// - Not registered
-//
-
-//
 //KICK :
-//- Normal : kick user
-//- Normal : kick user :msg
-//- Normal : chan user
-//- Normal : chan user :msg
-//- Normal : chan chan ... user user ...
-//- Normal : chan chan ... user user ... :msg
-//- @ -> as not operator
-//- NEEDMOREPARAMS
 //- BADCHANMASK
-//- NO SUCH CHAN
 //- USERNOTONCHAN
 //- USERNOTINCHAN
-//- Not registered
 //-
 // MODE:
 // - ERR_NEEDMOREPARAMS
@@ -83,7 +65,6 @@ async fn main() -> Result<()> {
 // -RPL_UMODEIS
 //
 // PART:
-// - ERR_NEEDMOREPARAMS
 // - ERR_NOSUCHCHANNEL
 // - ERR_NOTONCHANNEL
 //
