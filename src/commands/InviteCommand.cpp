@@ -5,11 +5,20 @@ InviteCommand::InviteCommand(std::vector<std::string> params)
 	_params = params;
 }
 
+/**
+ * @brief Execute the INVITE command.
+ * Invite a user to a channel.
+ * Ex: INVITE user #channel
+ * The user receives an invitation to join the specified channel.
+ *
+ * @param[in,out] executor client executing the command
+ * @param[in,out] server server instance
+ */
 void InviteCommand::execute(Client *executor, Server &server)
 {
 	if (!executor->isRegistered())
 	{
-		server.reply(executor, ERR_NOTREGISTERED(executor->getNickname()));	
+		server.reply(executor, ERR_NOTREGISTERED(executor->getNickname()));
 		return;
 	}
 	if (_params.size() < 2)
@@ -24,9 +33,14 @@ void InviteCommand::execute(Client *executor, Server &server)
 	}
 	Client *target = server.getClient(_params[0]);
 	Channel *channel = server.getChannel(_params[1]);
-	if (!target || !channel)
+	if (!target)
 	{
-		server.reply(executor, ERR_NOSUCHNICK(executor->getNickname(), _params[1]));
+		server.reply(executor, ERR_NOSUCHNICK(executor->getNickname(), _params[0]));
+		return;
+	}
+	if (!channel)
+	{
+		server.reply(executor, ERR_NOSUCHCHANNEL(executor->getNickname(), _params[1]));
 		return;
 	}
 	if (!channel->isClientInChannel(executor))
@@ -48,7 +62,7 @@ void InviteCommand::execute(Client *executor, Server &server)
 				// RPL_AWAY : hors scope : commande AWAY
 				return;
 			}
-			channel->addClient(target);
+			channel->addClientToAllowList(target);
 			server.reply(executor, RPL_INVITING(executor->getNickname(), _params[1], _params[0]));
 			return;
 		}
@@ -65,7 +79,7 @@ void InviteCommand::execute(Client *executor, Server &server)
 			// RPL_AWAY : same
 			return;
 		}
-		channel->addClient(target);
+		channel->addClientToAllowList(target);
 		server.reply(executor, RPL_INVITING(executor->getNickname(), _params[1], _params[0]));
 		return;
 	}

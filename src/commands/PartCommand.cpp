@@ -6,14 +6,23 @@ PartCommand::PartCommand(std::vector<std::string> params)
 	_params = params;
 }
 
-void PartCommand::execute(Client* executor, Server& server)
+/**
+ * @brief Execute the PART command.
+ * Leave the channel #channel1 and #channel2.
+ * Ex: PART #channel1,#channel2
+ *
+ * @param[in,out] executor client executing the command
+ * @param[in,out] server server instance
+ */
+void PartCommand::execute(Client *executor, Server &server)
 {
 	if (!executor->isRegistered())
 	{
 		server.reply(executor, ERR_NOTREGISTERED(executor->getNickname()));
 		return;
 	}
-	if (_params.size() < 1) {
+	if (_params.size() < 1)
+	{
 		server.reply(executor, ERR_NEEDMOREPARAMS(executor->getNickname(), "Part"));
 		return;
 	}
@@ -30,7 +39,7 @@ void PartCommand::execute(Client* executor, Server& server)
 		channel_names.push_back(channel_name);
 	for (size_t i = 0; i < channel_names.size(); ++i)
 	{
-		Channel* channel = server.getChannel(channel_names[i]);
+		Channel *channel = server.getChannel(channel_names[i]);
 		if (!channel)
 		{
 			server.reply(executor, ERR_NOSUCHCHANNEL(executor->getNickname(), channel_names[i]));

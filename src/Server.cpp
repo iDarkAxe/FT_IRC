@@ -1,15 +1,15 @@
 #include <iomanip>
 #include <sstream>
 #include <ctime>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <fcntl.h>
+#include <netdb.h>
 
-#include "Server_utils.h"
 #include "Server.hpp"
 #include "ACommand.hpp"
 #include "CommandFactory.hpp"
@@ -22,78 +22,128 @@
 
 Server::~Server()
 {
-	for (clientsIterator it = this->clients.begin(); it != this->clients.end(); ++it)
+	for (clientsType::iterator it = this->clients.begin(); it != this->clients.end(); ++it)
 	{
 		close(it->first);
 	}
-	for (channelsIterator it = this->channels.begin(); it != this->channels.end(); ++it)
+	for (channelsType::iterator it = this->channels.begin(); it != this->channels.end(); ++it)
 	{
 		delete it->second;
 	}
 }
 
-Server::Server(int port, std::string password) : _port(port)
+Server::Server(int port, std::string password) : _port(port), _password(password)
 {
 	g_sig = 0;
-	_password = password;
 	signal_init();
 }
 
-// To documentate
+/**
+ * @brief Initialize the server socket.
+ * This function creates, binds, and listens on a server socket for incoming client connections.
+ * It supports both IPv4 and IPv6 addresses.
+ * getaddrinfo is used to obtain the address information,
+ * it tries each address in a list until it finds one that works.
+ *
+ * @param[in] port port number to bind the server socket to
+ * @return int file descriptor of the server socket on success, -1 on failure
+ */
 int Server::init_socket(int port)
 {
-	#ifdef SOCK_NONBLOCK
-	this->_server_socket = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);
-	#else
-	this->_server_socket = socket(AF_INET, SOCK_STREAM, 0);
-	#endif
-	if (this->_server_socket < 0)
+	struct addrinfo hints;
+	struct addrinfo *result, *rp;
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;	 /* Allow IPv4 or IPv6 */
+	hints.ai_socktype = SOCK_STREAM; /* Stream socket */
+	hints.ai_flags = AI_PASSIVE;	 /* For wildcard IP address */
+	hints.ai_protocol = 0;			 /* Any protocol */
+	hints.ai_canonname = NULL;
+	hints.ai_addr = NULL;
+	hints.ai_next = NULL;
+
 	{
-		perror("socket");
-		return -1;
+		int getaddrinfo_ret;
+		std::stringstream ss;
+
+		ss << port;
+		getaddrinfo_ret = getaddrinfo(NULL, ss.str().c_str(), &hints, &result);
+		if (getaddrinfo_ret != 0)
+		{
+			ss.str("");
+			ss << "getaddrinfo: " << gai_strerror(getaddrinfo_ret);
+			Debug::print(ERROR, ss.str());
+			return -1;
+		}
 	}
-
-	int opt = 1;
-	if (setsockopt(this->_server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+	for (rp = result; rp != NULL; rp = rp->ai_next)
 	{
-		perror("setsockopt");
-		close(this->_server_socket);
-		return -1;
-	}
+#ifdef SOCK_NONBLOCK
+		this->_server_socket = socket(rp->ai_family, rp->ai_socktype | SOCK_NONBLOCK, rp->ai_protocol);
+#else
+		this->_server_socket = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+#endif
+		if (this->_server_socket == -1)
+		{
+			perror("socket");
+			if (rp->ai_next != NULL)
+				Debug::print(WARNING, "Could not create socket, trying next...");
+			else
+				Debug::print(ERROR, "Could not create socket, no more options left.");
+			continue;
+		}
 
-	sockaddr_in sin;
-	::memset(&sin, 0, sizeof(sin));
+		int opt = 1;
+		if (setsockopt(this->_server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+		{
+			perror("setsockopt");
+			close(this->_server_socket);
+			freeaddrinfo(result);
+			return -1;
+		}
 
-	sin.sin_family = AF_INET;
-	sin.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	sin.sin_port = htons(static_cast<uint16_t>(port));
-
-	if (bind(this->_server_socket, reinterpret_cast<const sockaddr *>(&sin), sizeof(sin)) < 0)
-	{
+		if (bind(this->_server_socket, rp->ai_addr, rp->ai_addrlen) == 0)
+			break; /* Success */
 		perror("bind");
 		close(this->_server_socket);
+		if (rp->ai_next != NULL)
+			Debug::print(WARNING, "Could not bind socket, trying next...");
+		else
+			Debug::print(ERROR, "Could not bind socket, no more options left.");
+	}
+
+	if (rp == NULL) /* No address succeeded */
+	{
+		freeaddrinfo(result);
+		Debug::print(ERROR, "Couldn't find a valid address\n");
+		return (-1);
+	}
+	freeaddrinfo(result); /* No longer needed */
+#ifndef SOCK_NONBLOCK
+	if (make_fd_nonblocking(this->_server_socket) < 0)
+	{
+		perror("make_fd_nonblocking");
+		close(this->_server_socket);
 		return -1;
 	}
+#endif
 	if (listen(this->_server_socket, SOMAXCONN) < 0)
 	{
 		perror("listen");
 		close(this->_server_socket);
 		return -1;
 	}
-	#ifndef SOCK_NONBLOCK
-	if (make_nonblocking(this->_server_socket) < 0)
-	{
-		perror("make_nonblocking");
-		close(this->_server_socket);
-		return -1;
-	}
-	#endif
 	return this->_server_socket;
 }
 
-// When we want to write in a socket, using this function will trigger epoll_wait
-// and lead us to write_client_fd
+/**
+ * @brief Enable EPOLLOUT event for the given file descriptor in epoll instance.
+ * This allows the server to be notified when the file descriptor is ready for writing.
+ * It is useful to use when the data send to a client couln't be sent in one go
+ * and we need to wait for the socket to be writable again.
+ *
+ * @param[in,out] fd file descriptor of the client socket
+ */
 void Server::enable_epollout(int fd)
 {
 	epoll_event ev;
@@ -104,6 +154,13 @@ void Server::enable_epollout(int fd)
 
 // When we wrote in client fd, we don't want epoll_wait to be triggered to write again,
 // we switch off the flag EPOLLOUT
+/**
+ * @brief Disable EPOLLOUT event for the given file descriptor in epoll instance.
+ * This prevents the server from being notified when the file descriptor is ready for writing,
+ * as it is always ready if there is no data to send.
+ *
+ * @param[in,out] fd file descriptor of the client socket
+ */
 void Server::disable_epollout(int fd)
 {
 	epoll_event ev;
@@ -112,6 +169,25 @@ void Server::disable_epollout(int fd)
 	epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev);
 }
 
+/**
+ * @brief Make a file descriptor non-blocking.
+ *
+ * @param[in,out] fd file descriptor to modify
+ * @return int 0 on success, -1 on failure
+ */
+int Server::make_fd_nonblocking(int fd)
+{
+	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+		return -1;
+	return 0;
+}
+
+/**
+ * @brief Initialize epoll event for a new client file descriptor.
+ *
+ * @param[in,out] client_fd file descriptor of the new client socket
+ * @return int 0 on success, 1 on failure
+ */
 int Server::init_epoll_event(int client_fd)
 {
 	// each client registered in epoll_ctl must have an event struct associated
@@ -128,41 +204,46 @@ int Server::init_epoll_event(int client_fd)
 	{
 		perror("epoll_ctl add client");
 		close(client_fd);
-		return 1;
+		return EXIT_FAILURE;
 	}
-	return 0;
+	return EXIT_SUCCESS;
 }
 
+/**
+ * @brief Initialize a new Client struct and add it to the server's client map.
+ *
+ * @param[in,out] client_fd file descriptor of the new client socket
+ * @param[in,out] ip_str IP address of the new client as a string
+ * @param[in,out] port Port number of the new client
+ */
 void Server::initClient(int client_fd, const std::string &ip_str, uint16_t port)
 {
 	// since we added a client in our epoll, we need a struct to represent it on our server
-	// LocalUser contains the pipes and tools, Client contains its server infos
 	Client c;
-	// the fd makes the link between epoll and our list of client
-	c.fd = client_fd;
-	// for non blocking or overlap situations, we need 2 I/O buffers for each client
-	// we want to kick incactives clients
-	c.last_ping = std::time(NULL);
-	c.connection_time = std::time(NULL);
+	c.fd = client_fd;			   // the fd makes the link between epoll and our list of client, it is the key in our map
+	c.last_ping = std::time(NULL); // we want to kick incactives clients, so we store the time of the last ping received
+	c.connection_time = c.last_ping;
 	c.timeout = -1;
 	c._ip_address = ip_str;
 	c.port = port;
-	// the client object contains
 	this->clients.insert(std::make_pair(client_fd, c));
 	std::stringstream ss;
 	ss << "New client: " << client_fd;
 	Debug::print(DEBUG, ss.str());
 }
 
-// for each call to accept with our server fd, if there is a client to register, it will returns a > 0 fd
-// We register all clients available with the true loop, and break only in case of error, or when there is no client to register
+/**
+ * @brief Accept and initialize new client connections.
+ * This function continuously accepts new client connections
+ * on the server socket until there are no more pending connections.
+ */
 void Server::new_client()
 {
 	while (true)
 	{
 		sockaddr_in client_addr;
 		socklen_t client_len = sizeof(client_addr);
-		int client_fd = accept(_server_socket, reinterpret_cast<sockaddr*>(&client_addr), &client_len);
+		int client_fd = accept(_server_socket, reinterpret_cast<sockaddr *>(&client_addr), &client_len);
 		if (client_fd < 0)
 		{
 			if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -174,9 +255,9 @@ void Server::new_client()
 			perror("accept");
 			break;
 		}
-		if (make_nonblocking(client_fd) < 0)	
+		if (make_fd_nonblocking(client_fd) < 0)
 		{
-			perror("make_nonblocking client");
+			perror("make_fd_nonblocking client");
 			close(client_fd);
 			continue;
 		}
@@ -226,19 +307,13 @@ std::string &Server::getPassword()
 	return this->_password;
 }
 
-ACommand *Server::parse_command(std::string line)
-{
-	Debug::print(DEBUG, "Parsing command: [" + line + "]");
-	std::string cmd = CommandFactory::get_command(line);
-	if (cmd.empty())
-		return NULL;
-	std::vector<std::string> params = CommandFactory::get_params(line);
-	return CommandFactory::createCommand(cmd, params);
-}
-
-// returns 1 to send a buff in parsing
-// returns 0 in case of client disconnection
-// returns -1 in case of error
+/**
+ * @brief Read data from a client file descriptor.
+ * This function attempts to read data from the specified client file descriptor.
+ *
+ * @param[in,out] fd file descriptor of the client socket
+ * @return int 1 on successful read, 0 on client disconnection, -1 on error
+ */
 int Server::read_client_fd(int fd)
 {
 	char buf[4096];
@@ -253,7 +328,6 @@ int Server::read_client_fd(int fd)
 		std::stringstream ss;
 		ss << "Message " << r << " bytes long from " << fd << " ignored";
 		Debug::print(INFO, ss.str());
-		// std::cerr << "Buffer limit reached for fd " << fd << ", cleaning buffer" << std::endl;
 		this->clients[fd].rbuf.clear();
 		return 0; // 1 si on veut lire et traiter les 512 premiers octets
 	}
@@ -290,7 +364,14 @@ int Server::read_client_fd(int fd)
 	}
 }
 
-// a mettre en bas de PASS USER et NICK uniquement
+// FIXME: ? a mettre en bas de PASS USER et NICK uniquement
+/**
+ * @brief Check if a client has completed authentication.
+ * If the client has provided the correct password, nickname, and username,
+ * the server will welcome the new client and mark them as registered.
+ *
+ * @param[in,out] fd file descriptor of the client socket
+ */
 void Server::is_authentification_complete(int fd)
 {
 	if (clients.find(fd) != clients.end() &&
@@ -299,20 +380,26 @@ void Server::is_authentification_complete(int fd)
 		clients[fd].getNickname() != "" &&
 		clients[fd].getUsername() != "")
 	{
-
 		Client &client = this->clients[fd];
 		std::stringstream ss;
-		ss << client.getNickname() << "!~" << client.getUsername() << "@" << client.getIp(); 
+		ss << client.getNickname() << "!~" << client.getUsername() << "@" << client.getIp();
 		client.setHost(ss.str());
 		ss.str("");
 		this->reply(&client, RPL_WELCOME(client.getNickname(), client.getHost()));
 		client.setRegistered();
-		ss << clients[fd].getUsername() << " aka " << clients[fd].getNickname() << " successfully connected";
-		// client.printClientIRCInfo();
+		ss << clients[fd].getHost() << " successfully connected";
 		Debug::print(DEBUG, ss.str());
+		// client.printClientIRCInfo();
 	}
 }
 
+/**
+ * @brief Interpret and process messages from a client.
+ * This function extracts complete messages from the client's read buffer,
+ * parses them into commands, and executes the corresponding actions.
+ *
+ * @param[in] fd file descriptor of the client socket
+ */
 void Server::interpret_msg(int fd)
 {
 	size_t pos;
@@ -320,7 +407,7 @@ void Server::interpret_msg(int fd)
 	{
 		std::string line = this->clients[fd].rbuf.substr(0, pos);
 		this->clients[fd].rbuf.erase(0, pos + 2);
-		ACommand *cmd = this->parse_command(line);
+		ACommand *cmd = CommandFactory::findAndCreateCommand(line);
 		// try catch ?
 		if (cmd)
 		{
@@ -330,11 +417,12 @@ void Server::interpret_msg(int fd)
 		}
 		else
 		{
+			if (line.empty()) //if client send 'nothing', just ignore
+				continue;
 			std::stringstream ss;
 			ss << "[" << line << "]"
 			   << " from client " << fd
 			   << " received";
-
 			Debug::print(INFO, ss.str());
 		}
 	}
@@ -342,6 +430,15 @@ void Server::interpret_msg(int fd)
 	this->is_authentification_complete(fd);
 }
 
+/**
+ * @brief Handle epoll events, dispatching them to the appropriate handlers.
+ * If it's a new connection, it calls new_client().
+ * If it's an existing client, it checks for READ, WRITE, HUP,
+ * and ERR events and handles them accordingly.
+ *
+ * @param[in] n number of events returned by epoll_wait
+ * @param[in] events event array containing the events to handle
+ */
 void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 {
 	// for each event received during epoll_wait
@@ -403,7 +500,13 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 	}
 }
 
-// revoir ici max event et la logique
+/**
+ * @brief Run the IRC server main loop.
+ * Start the server, initialize the socket and epoll instance,
+ * and enter the main event loop to handle client connections and messages.
+ *
+ * @return int 0 on success (signal interrupt is a normal stop), 1 on failure
+ */
 int Server::RunServer()
 {
 	this->_server_socket = init_socket(this->_port);
@@ -413,7 +516,13 @@ int Server::RunServer()
 	ss << "Listening on port: " << this->_port;
 	Debug::print(INFO, ss.str());
 
-	this->_epfd = init_epoll(this->_server_socket);
+	this->_epfd = epoll_create(MAX_EVENTS);
+	if (this->_epfd < 0)
+	{
+		perror("epoll_create");
+		close(this->_server_socket);
+		return (EXIT_FAILURE);
+	}
 	// doc
 	epoll_event ev;
 	ev.events = EPOLLIN | EPOLLRDHUP; // RDHUP pour détecter fermeture distante
@@ -427,26 +536,27 @@ int Server::RunServer()
 		return EXIT_FAILURE;
 	}
 
-	// hash map pour associer chaque client a son fd : acceder a chaque client en utilisant son fd comme cle
 	epoll_event events[MAX_EVENTS];
-
 	while (g_sig == 0)
 	{
 		// we check for events from our localUsers fd registered
 		int n = epoll_wait(this->_epfd, events, MAX_EVENTS, 100); // timeout 100ms
 		if (n < 0)
 		{
-			// if (errno == EINTR)
-			//	 continue; // signal interrompt -> relancer
+			if (errno == EINTR) // signal interrompt
+			{
+				Debug::print(WARNING, "epoll_wait interrupted by signal, closing...");
+				break;
+			}
 			perror("epoll_wait");
 			break;
 		}
 		handle_events(n, events);
 		deleteUnusedChannels();
-		// #ifdef USE_FULL_CLIENT
+#ifdef USE_FULL_CLIENT
 		this->check_clients_ping();		 // si on n'a pas eu de signe d'activite depuis trop longtemps
 		this->remove_inactive_clients(); // remove inactive localUsers after a unanswered ping
-		// #endif
+#endif
 	}
 	close(this->_server_socket);
 	close(this->_epfd);

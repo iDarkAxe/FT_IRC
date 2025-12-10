@@ -7,10 +7,10 @@
 #include <sys/epoll.h>
 #include <netinet/in.h>
 
+#include "Signals.hpp"
 #include "ACommand.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
-#include "Server_utils.h"
 
 const int MAX_EVENTS = 64; // Faire une taille dynamique (au fil de l'eau -> vecteur)
 
@@ -20,23 +20,18 @@ const int MAX_EVENTS = 64; // Faire une taille dynamique (au fil de l'eau -> vec
 #define PING_TIMEOUT 3
 
 class ACommand;
-extern sig_atomic_t g_sig;
-
-int signal_init(void);
-void reset_signal_default(void);
-void ignore_signal(void);
 
 class Server
 {
 private:
-	int _port;															 //!< Port number for the server
-	std::string _password;												 //!< Password for the server
-	std::map<int, Client> clients;										 //!< Map of client socket to Client class
-	int _server_socket;													 //!< Server socket file descriptor
-	int _epfd;															 //!< Epoll file descriptor
-	std::map<std::string, Channel *> channels;							 //!< Map of channel name to Channel pointers
-	typedef std::map<int, Client>::iterator clientsIterator;			 //!< Iterator for clients map
-	typedef std::map<std::string, Channel *>::iterator channelsIterator; //!< Iterator for channels map
+	typedef std::map<int, Client> clientsType;			   //!< Type for clients
+	typedef std::map<std::string, Channel *> channelsType; //!< Type for channels
+	int _port;											   //!< Port number for the server
+	std::string _password;								   //!< Password for the server
+	clientsType clients;								   //!< Map of client socket to Client class
+	int _server_socket;									   //!< Server socket file descriptor
+	int _epfd;											   //!< Epoll file descriptor
+	channelsType channels;								   //!< Map of channel name to Channel pointers
 
 public:
 	Server(int port, std::string password);
@@ -51,6 +46,7 @@ public:
 	int read_client_fd(int fd);
 	void enable_epollout(int fd);
 	void disable_epollout(int fd);
+	int make_fd_nonblocking(int fd);
 
 	// Clients managing
 	void client_kicked(int fd);
@@ -65,10 +61,10 @@ public:
 	Channel *getChannel(const std::string &nickname);
 	bool addChannel(const std::string &channel_name);
 	bool removeChannel(const std::string &channel_name);
-	void deleteUnusedChannels();
+	void removeClientFromAllChannels(Client *client);
 
+	void deleteUnusedChannels();
 	// Parsing and execution of commands
-	ACommand *parse_command(std::string line);
 	void is_authentification_complete(int fd);
 	void interpret_msg(int fd);
 
