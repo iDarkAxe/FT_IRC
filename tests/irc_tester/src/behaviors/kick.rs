@@ -106,18 +106,18 @@ pub async fn kick_priviledges(port :u16, id: usize, timeout_ms: u64) -> Result<(
     client1
         .try_expect(
             &format!("KICK #{}chan {} : client3 kick client3\r\n", &nick1, &nick3),
-            "kick msg",
+            "KICK ",
             "C1 failed to kick client3 ",
             timeout_ms,
         )
         .await?;
     client2.expect(
-        "kick msg",
+        "KICK ",
         "No kick message recieved",
         timeout_ms,
     ).await?;
     client3.expect(
-        "kick msg",
+        "KICK ",
         "No kick message recieved",
         timeout_ms,
     ).await?;
