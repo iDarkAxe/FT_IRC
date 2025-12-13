@@ -1,0 +1,25 @@
+mod bot;
+mod chat_gpt;
+mod glados;
+mod wall_e;
+
+use bot::Bot;
+use chat_gpt::chat_gpt;
+use glados::glados;
+use wall_e::wall_e;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let timeout_ms = 0;
+    let glados_handle = tokio::spawn(glados(timeout_ms));
+    let wall_e_handle = tokio::spawn(wall_e(timeout_ms));
+    let chat_gpt_handle = tokio::spawn(chat_gpt(timeout_ms));
+
+    if let Err(e) = chat_gpt_handle.await {
+        println!("Chat-GPT error: {}", e);
+    }
+    glados_handle.abort();
+    wall_e_handle.abort();
+
+    Ok(())
+}

@@ -1,4 +1,4 @@
-.PHONY : all clean fclean re bonus clean-lib clean-bin clean-obj debug debug-CXX debug-print
+.PHONY : all clean fclean re bonus clean-lib clean-bin clean-obj debug debug-CXX debug-print test
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 DEPENDANCIES = -MMD -MP
@@ -17,7 +17,10 @@ CXX_DEBUG_CXXFLAGS = -std=c++98 -g3 -Weverything -Wno-padded -pedantic -O2 -Wwri
 #############################################################################################
 # Source directories
 P_SRC = src/
+P_CMDS = commands/
+
 P_OBJ = .obj/
+P_DEPS = .obj/
 
 P_INC = inc/
 
@@ -30,6 +33,12 @@ P_INC = inc/
 INC = \
 	Debug.hpp \
 	utils.hpp \
+	Client.hpp \
+	Channel.hpp \
+	Server.hpp \
+	Reply.hpp \
+
+INC_CMDS = \
 	ACommand.hpp \
 	CommandFactory.hpp \
 	PassCommand.hpp \
@@ -40,12 +49,11 @@ INC = \
 	UserCommand.hpp \
 	PongCommand.hpp \
 	PrivmsgCommand.hpp \
-	Server_utils.h \
-	LocalUser.hpp \
-	Client.hpp \
-	NetworkState.hpp \
-	Channel.hpp \
-	Reply.hpp \
+	KickCommand.hpp \
+	ModeCommand.hpp \
+	PartCommand.hpp \
+	QuitCommand.hpp \
+	TimeCommand.hpp \
 
 # Template implementation  files
 TPP = \
@@ -55,6 +63,15 @@ TPP = \
 SRC = \
 	main.cpp \
 	Debug.cpp \
+	utils.cpp \
+	Server.cpp \
+	ServerIRC.cpp \
+	Client.cpp \
+	Channel.cpp \
+	Signals.cpp \
+
+SRC_CMDS = \
+	ACommand.cpp \
 	CommandFactory.cpp \
 	InviteCommand.cpp \
 	TopicCommand.cpp \
@@ -64,13 +81,11 @@ SRC = \
 	UserCommand.cpp \
 	PongCommand.cpp \
 	PrivmsgCommand.cpp \
-	utils.cpp \
-	Server.cpp \
-	Client.cpp \
-	NetworkState.cpp \
-	Channel.cpp \
-	Server_utils.cpp \
-	ACommand.cpp \
+	KickCommand.cpp \
+	ModeCommand.cpp \
+	PartCommand.cpp \
+	QuitCommand.cpp \
+	TimeCommand.cpp \
 
 LIBS = \
 
@@ -79,18 +94,21 @@ LIBS = \
 #                                        MANIPULATION                                       #
 #                                                                                           #
 #############################################################################################
-SRCS = $(addprefix $(P_SRC), $(SRC)) 
+SRCS = \
+	$(addprefix $(P_SRC), $(SRC)) \
+	$(addprefix $(P_SRC)$(P_CMDS), $(SRC_CMDS)) \
 
 # List of object files (redirect to P_OBJ)
 OBJS = $(subst $(P_SRC), $(P_OBJ), $(SRCS:.cpp=.o))
 P_OBJS = $(subst $(P_SRC), $(P_OBJ), $(SRCS))
 
 # List of depedencies
-DEPS = $(OBJS:%.o=%.d)
+DEPS = $(subst $(P_OBJ), $(P_DEPS), $(OBJS:%.o=%.d))
 
 # List of header files
 INCS = \
 	$(addprefix $(P_INC), $(INC)) \
+	$(addprefix $(P_INC)$(P_CMDS), $(INC_CMDS)) \
 
 # 	$(addprefix $(P_INC), $(TPP))
 
@@ -105,7 +123,7 @@ all:
 
 # Create $(NAME) executable
 $(NAME): $(OBJS) $(INCS)
-	@if $(CXX) $(CXXFLAGS) $(DEPENDANCIES) -I $(P_INC) -o $(NAME) $(OBJS) $(LIBS); then \
+	@if $(CXX) $(CXXFLAGS) $(DEPENDANCIES) -I $(P_INC) -I $(P_INC)$(P_CMDS) -o $(NAME) $(OBJS) $(LIBS); then \
 		echo "$(Green)Creating executable $@$(Color_Off)"; \
 	else \
 		echo "$(Red)Error creating $@$(Color_Off)"; \
@@ -114,7 +132,7 @@ $(NAME): $(OBJS) $(INCS)
 # Custom rule to compilate all .cpp with there path
 $(P_OBJ)%.o: $(P_SRC)%.cpp $(INCS)
 	@mkdir -p $(dir $@)
-	@if $(CXX) $(CXXFLAGS) $(DEPENDANCIES) -I $(P_INC) -c $< -o $@; then \
+	@if $(CXX) $(CXXFLAGS) $(DEPENDANCIES) -I $(P_INC) -I $(P_INC)$(P_CMDS) -c $< -o $@; then \
 		echo "$(Cyan)Compiling $<$(Color_Off)"; \
 	else \
 		echo "$(Red)Error creating $@$(Color_Off)"; \
@@ -131,9 +149,10 @@ $(P_OBJ)%.o: $(P_SRC)%.cpp $(INCS)
 # Rules for clean up
 clean:
 	rm -rfd $(P_OBJ)
-	rm -rfd $(OBJS)
-	rm -rfd $(DEPS)
+	rm -rfd $(P_DEPS)
 	rm -rf .server_output.log
+# 	rm -rfd $(OBJS)
+# 	rm -rfd $(DEPS)
 
 clean-lib:
 	rm -rfd $(P_LIB)
@@ -146,21 +165,33 @@ clean-obj:
 
 fclean:
 	@$(MAKE) clean-obj
-	@$(MAKE) clean-lib
 	@$(MAKE) clean-bin
+# 	@$(MAKE) clean-lib
 
 re:
 	@$(MAKE) fclean
 	@$(MAKE) all
 
-NUM_CLIENTS ?= 1000
+CLIENTS ?= 1000
+LEAKS ?= 0
+STRESS ?= 0
+LOG ?= 0
+BEH ?= 0
+#PORT?=6667
 
-test: all
-	./tests/scripts/run.sh $(NUM_CLIENTS)
+test:
+ifeq ($(LEAKS),1)
+	$(MAKE) fclean
+	@$(MAKE) $(NAME) CXXFLAGS="$(CXXFLAGS_DEBUG) -D USE_TESTER=1"
+else
+	@$(MAKE) $(NAME)
+endif
+	./tests/run.sh $(CLIENTS) $(LEAKS) $(STRESS) $(LOG) $(BEH)
 
 # Aliases
 clear: clean
 fclear: fclean
+fclena: fclean
 flcean: fclean
 flcear: fclean
 
