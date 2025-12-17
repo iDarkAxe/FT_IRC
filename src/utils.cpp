@@ -1,9 +1,12 @@
 #include "utils.hpp"
+#include "Debug.hpp"
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdio.h>
 #include <iomanip>
 #include <sstream>
 #include <ctime>
+#include <cerrno>
 
 static bool is_terminal(int fd);
 
@@ -75,4 +78,22 @@ std::string format_date(void)
         << (timeinfo->tm_year + 1900);
     
     return oss.str();
+}
+
+void secure_close(int& fd)
+{
+	if (fd == -1)
+		return;
+	close(fd);
+	fd = -1;
+}
+
+void epoll_ret(void)
+{
+	if (errno == EINTR) 
+	{
+		Debug::print(INFO, "epoll_wait interrupted by signal, closing...");
+		return;
+	}
+	perror("epoll_wait");
 }
