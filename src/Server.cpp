@@ -47,7 +47,7 @@ Server::Server(int port, std::string password) : _port(port), _password(password
  * @param[in] port port number to bind the server socket to
  * @return int file descriptor of the server socket on success, -1 on failure
  */
-int Server::init_socket(int port)
+int Server::init_socket(void)
 {
 	struct addrinfo hints;
 	struct addrinfo *result, *rp;
@@ -65,7 +65,7 @@ int Server::init_socket(int port)
 		int getaddrinfo_ret;
 		std::stringstream ss;
 
-		ss << port;
+		ss << this->_port;
 		getaddrinfo_ret = getaddrinfo(NULL, ss.str().c_str(), &hints, &result);
 		if (getaddrinfo_ret != 0)
 		{
@@ -96,7 +96,7 @@ int Server::init_socket(int port)
 		if (setsockopt(this->_server_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
 		{
 			perror("setsockopt");
-			close(this->_server_socket);
+			secure_close(this->_server_socket);
 			freeaddrinfo(result);
 			return -1;
 		}
@@ -104,7 +104,7 @@ int Server::init_socket(int port)
 		if (bind(this->_server_socket, rp->ai_addr, rp->ai_addrlen) == 0)
 			break; /* Success */
 		perror("bind");
-		close(this->_server_socket);
+		secure_close(this->_server_socket);
 		if (rp->ai_next != NULL)
 			Debug::print(WARNING, "Could not bind socket, trying next...");
 		else
@@ -122,17 +122,48 @@ int Server::init_socket(int port)
 	if (make_fd_nonblocking(this->_server_socket) < 0)
 	{
 		perror("make_fd_nonblocking");
-		close(this->_server_socket);
+		secure_close(this->_server_socket);
 		return -1;
 	}
 #endif
 	if (listen(this->_server_socket, SOMAXCONN) < 0)
 	{
 		perror("listen");
-		close(this->_server_socket);
+		secure_close(this->_server_socket);
 		return -1;
 	}
+	std::stringstream ss;
+	ss << "Listening on port: " << this->_port;
+	Debug::print(INFO, ss.str());
 	return this->_server_socket;
+}
+
+/**
+ * @brief Initialize the epoll socket and the main event
+ * 
+ * @return int file descriptor of the epoll socket on success, 1 on failure
+ */
+int Server::init_epoll(void)
+{
+	this->_epfd = epoll_create(MAX_EVENTS);
+	if (this->_epfd < 0)
+	{
+		perror("epoll_create");
+		secure_close(this->_server_socket);
+		return (EXIT_FAILURE);
+	}
+	epoll_event ev;
+	ev.events = EPOLLIN | EPOLLRDHUP; 
+	ev.data.fd = this->_server_socket;
+	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, this->_server_socket, &ev) < 0)
+	{
+		perror("epoll_ctl add server");
+		secure_close(this->_server_socket);
+		secure_close(this->_epfd);
+		return EXIT_FAILURE;
+	}
+
+	return (this->_epfd);
 }
 
 /**
@@ -429,30 +460,28 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 		if (fd == this->_server_socket)
 		{
 			this->new_client();
+			continue;
 		}
-		else
+		// EPOLLHUP: fd closed by client : the socket is dead
+		// EPOLLERR: error condition happened on the associated fd
+		// EPOLLRDHUP:  client closed fd but the socket is still alive
+		if (evs & (EPOLLHUP | EPOLLERR) || evs & EPOLLRDHUP) 
 		{
-			// EPOLLHUP : fd closed by client : the socket is dead
-			// EPOLLERR= error condition happened on the associated fd
-			// EPOLLRDHUP :  client closed fd but the socket is still alive
-			if (evs & (EPOLLHUP | EPOLLERR) || evs & EPOLLRDHUP) 
-			{
-				this->client_quited(fd);
+			this->client_quited(fd);
+			continue;
+		}
+		// EPOLLOUT : We set that flag when we couldn't send all data to client in one try
+		if (evs & EPOLLOUT)
+		{
+			if (!this->reply(this->clients[fd], ""))
 				continue;
-			}
-			// EPOLLOUT : We set that flag when we couldn't send all data to client in one try
-			if (evs & EPOLLOUT)
-			{
-				if (!this->reply(this->clients[fd], ""))
-					continue;
-			}
-			// EPOLLIN : There is data to read in the associated fd
-			if (evs & EPOLLIN)
-			{
-				int result = this->read_client_fd(fd);
-				if (result == 1)
-					interpret_msg(fd);
-			}
+		}
+		// EPOLLIN : There is data to read in the associated fd
+		if (evs & EPOLLIN)
+		{
+			int result = this->read_client_fd(fd);
+			if (result == 1)
+				interpret_msg(fd);
 		}
 	}
 }
@@ -466,43 +495,17 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
  */
 int Server::RunServer()
 {
-	this->_server_socket = init_socket(this->_port);
-	if (this->_server_socket < 0)
+	if (init_socket() < 0)
 		return EXIT_FAILURE;
-	std::stringstream ss;
-	ss << "Listening on port: " << this->_port;
-	Debug::print(INFO, ss.str());
-
-	this->_epfd = epoll_create(MAX_EVENTS);
-	if (this->_epfd < 0)
-	{
-		perror("epoll_create");
-		close(this->_server_socket);
-		return (EXIT_FAILURE);
-	}
-	epoll_event ev;
-	ev.events = EPOLLIN | EPOLLRDHUP; 
-	ev.data.fd = this->_server_socket;
-	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, this->_server_socket, &ev) < 0)
-	{
-		perror("epoll_ctl add server");
-		close(this->_server_socket);
-		close(this->_epfd);
+	if (init_epoll() < 0)
 		return EXIT_FAILURE;
-	}
-
 	epoll_event events[MAX_EVENTS];
 	while (g_sig == 0)
 	{
 		int n = epoll_wait(this->_epfd, events, MAX_EVENTS, EPOLL_WAIT_TIMEOUT);
 		if (n < 0)
 		{
-			if (errno == EINTR) 
-			{
-				Debug::print(WARNING, "epoll_wait interrupted by signal, closing...");
-				break;
-			}
-			perror("epoll_wait");
+			epoll_ret();
 			break;
 		}
 		handle_events(n, events);
@@ -510,9 +513,7 @@ int Server::RunServer()
 		// check_clients_ping();
 		// remove_inactive_clients();
 	}
-	close(this->_server_socket);
-	this->_server_socket = -1;
-	close(this->_epfd);
-	this->_epfd = -1;
+	secure_close(this->_server_socket);
+	secure_close(this->_epfd);
 	return EXIT_SUCCESS;
 }

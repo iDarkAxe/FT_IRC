@@ -39,7 +39,8 @@ public:
 	~Server();
 	std::string &getPassword();
 	int RunServer();
-	int init_socket(int port);
+	int init_socket(void);
+	int init_epoll(void);
 	void initClient(int client_fd, const std::string &ip_str, uint16_t port);
 	int init_epoll_event(int client_fd);
 
