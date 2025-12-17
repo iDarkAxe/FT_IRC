@@ -8,6 +8,7 @@ Make your own IRC Server that no one asked for.
 
 * [📖 Introduction](#introduction-en)
 * [⚙️ Requirements](#requirements-en)
+* [🔧 Architecture / Design Patterns](#arch-en)
 * [📝 Features](#features-en)
 * [🧪 Tester](#tester-en)
 * [🤖 Async bots](#async-bots-en)
@@ -38,7 +39,15 @@ This is the first big project after the `C` projects at 42 so we tried to make i
 
 We used as a reference the [RFC 2812](https://datatracker.ietf.org/doc/html/rfc2812) , and some precisions of [RFC 2811](https://datatracker.ietf.org/doc/html/rfc2811). We implemented only the server, we were not required to implement a client neither a server-to-server communication.
 
-## <a name="features-en">📝 Features ##
+## <a name="arch-en">🔧 Architecture / Design Patterns ##
+
+### Pattern Factory ###
+- The `CommandFactory::findAndCreateCommand()` function select the right command and build it for the client that request it.
+
+#### Benefits ####
+- 👍 **Extensibility**: easy addition of new commands
+- 👍 **Maintainability**: centralized creation logic
+- 👍 **Readability**: explicit construction of complex objects
 
 ### Classes ###
 
@@ -51,6 +60,8 @@ We used 5 classes :
 * `Debug` : Debug printing to make correctly formatted logging
 
 A Client doesn't have any permission to execute anything, the server does it for him. A Channel has it's own permissions to work on his own member variables. A Command is a regroupment of server, client and channel operations. The server acts as the orchestrator of its group of users and channels.
+
+## <a name="features-en">📝 Features ##
 
 ### Commands notation ###
 
