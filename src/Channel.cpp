@@ -1,6 +1,7 @@
 #include "Channel.hpp"
 #include "Debug.hpp"
 #include <cstring>
+#include <sstream>
 
 Channel::Channel(std::string channel_name) : _channel_name(channel_name), _topic(""), _key(""), _mode(), _user_limit(0), _clients(), _operators(), _allowed_clients(), _allowed_operators()
 {
@@ -148,6 +149,37 @@ Client *Channel::getClientByNickname(const std::string &nickname) const
 			return *it;
 	}
 	return NULL;
+}
+
+std::vector<std::string> Channel::getModeAsString(Client *client)
+{
+	std::stringstream modes;
+	std::stringstream param;
+	modes << "+";
+	if (this->_mode.is_invite_only)
+		modes << "i";
+	if (this->_mode.is_topic_set_op_only)
+		modes << "t";
+	if (this->_mode.is_limited)
+	{
+		modes << "l";
+		if (this->isClientOPChannel(client))
+			param << this->_user_limit;
+	}
+	if (this->_mode.has_key)
+	{
+		modes << "k";
+		if (param.str().size() != 0)
+			param << " ";
+		param << this->_key;
+	}
+	if (modes.str().size() == 1)  // contain only "+"
+		return std::vector<std::string>();
+	std::vector<std::string> v;
+	v.push_back(modes.str());
+	if (!param.str().empty())
+		v.push_back(param.str());
+	return (v);
 }
 
 Channel::clientsType &Channel::getClients()

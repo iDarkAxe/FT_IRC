@@ -58,7 +58,7 @@ void PrivmsgCommand::execute(Client *executor, Server &server)
 		}
 		std::stringstream ss;
 		ss << ":" << executor->getHost() << " " << "PRIVMSG " << target->getName() << " :" << _params[1];
-		server.replyChannel(target, ss.str());
+		server.replyChannel(target, executor, ss.str());
 		return;
 	}
 	else

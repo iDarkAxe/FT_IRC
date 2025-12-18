@@ -46,6 +46,7 @@ public:
 	void clear();
 	void setModes(ChannelModes modes);
 	ChannelModes getModes() const;
+	std::vector<std::string> getModeAsString(Client *client);
 	void setKey(const std::string &key);
 	bool isKeySet(const ChannelModes &modes) const;
 	bool isKeySame(const std::string &key) const;

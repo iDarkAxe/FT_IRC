@@ -72,8 +72,9 @@ public:
 
 	// Reply
 	bool reply(Client *client, std::string message);
-	bool replyChannel(Channel *channel, std::string message);
-	bool replyChannelOnlyOP(Channel *channel, std::string message);
+	bool replyChannel(Channel *channel, Client *sender, std::string message);
+	bool broadcastChannel(Channel *channel, std::string message);
+	bool broadcastChannelOnlyOP(Channel *channel, std::string message);
 };
 
 #endif // SERVER_HPP

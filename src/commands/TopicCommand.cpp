@@ -63,5 +63,5 @@ void TopicCommand::execute(Client *executor, Server &server)
 		return;
 	}
 	channel->setTopic(new_topic);
-	server.replyChannel(channel, RPL_TOPIC(executor->getNickname(), _params[0], new_topic));
+	server.broadcastChannel(channel, RPL_TOPIC(executor->getNickname(), _params[0], new_topic));
 }

@@ -44,7 +44,6 @@ Server::Server(int port, std::string password) : _port(port), _password(password
  * getaddrinfo is used to obtain the address information,
  * it tries each address in a list until it finds one that works.
  *
- * @param[in] port port number to bind the server socket to
  * @return int file descriptor of the server socket on success, -1 on failure
  */
 int Server::init_socket(void)
