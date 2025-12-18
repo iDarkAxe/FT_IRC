@@ -49,6 +49,10 @@ We used as a reference the [RFC 2812](https://datatracker.ietf.org/doc/html/rfc2
 - 👍 **Maintainability**: centralized creation logic
 - 👍 **Readability**: explicit construction of complex objects
 
+### Graph ###
+
+<img src="docs/irc_server/handle_events.jpg" alt="handle_events()" width="400"/><img src="docs/irc_server/run_server.jpg" alt="RunServer()" width="400"/>
+
 ### Classes ###
 
 We used 5 classes :
