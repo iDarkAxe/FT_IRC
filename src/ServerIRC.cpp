@@ -67,6 +67,41 @@ bool Server::reply(Client *client, std::string message)
 }
 
 /**
+ * @brief Send a message to all clients (without the sender) in a channel
+ *
+ * @param[in,out] channel channel to send the message to
+ * @param[in] message message to send
+ * @return true everything sent properly to all clients
+ * @return false error occurred
+ */
+bool Server::replyChannel(Channel *channel, Client *sender, std::string message)
+{
+	if (!channel)
+	{
+		Debug::print(ERROR, "No channel given");
+		return false;
+	}
+	bool ret = true;
+	for (Channel::clientsType::iterator it = channel->getClients().begin(); it != channel->getClients().end();)
+	{
+		Channel::clientsType::iterator next_it = it;
+		next_it++;
+		if (*it == sender)
+		{
+			it = next_it;
+			continue;
+		}
+		if (!reply(*it, message))
+		{
+			ret = false;
+			Debug::print(ERROR, "The following message couldn't be properly send: " + message);
+		}
+		it = next_it;
+	}
+	return ret;
+}
+
+/**
  * @brief Send a message to all clients in a channel
  *
  * @param[in,out] channel channel to send the message to
@@ -74,7 +109,7 @@ bool Server::reply(Client *client, std::string message)
  * @return true everything sent properly to all clients
  * @return false error occurred
  */
-bool Server::replyChannel(Channel *channel, std::string message)
+bool Server::broadcastChannel(Channel *channel, std::string message)
 {
 	if (!channel)
 	{
@@ -96,7 +131,7 @@ bool Server::replyChannel(Channel *channel, std::string message)
 	return ret;
 }
 
-bool Server::replyChannelOnlyOP(Channel *channel, std::string message)
+bool Server::broadcastChannelOnlyOP(Channel *channel, std::string message)
 {
 	if (!channel)
 	{

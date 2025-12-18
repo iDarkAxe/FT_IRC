@@ -52,7 +52,7 @@ void PartCommand::execute(Client *executor, Server &server)
 		}
 		// Send part message to channel
 		std::string part_msg = ":" + executor->getNickname() + " PART " + channel_names[i];
-		server.replyChannel(channel, part_msg);
+		server.broadcastChannel(channel, part_msg);
 		channel->removeClient(executor);
 	}
 }

@@ -22,11 +22,6 @@ void ModeCommand::execute(Client *executor, Server &server)
 		server.reply(executor, ERR_NOTREGISTERED(executor->getNickname()));
 		return;
 	}
-	if (_params.size() < 2)
-	{
-		server.reply(executor, ERR_NEEDMOREPARAMS(executor->getNickname(), "MODE"));
-		return;
-	}
 	if (!executor->isRegistered())
 	{
 		server.reply(executor, ERR_NOTREGISTERED(executor->getNickname()));
@@ -70,7 +65,7 @@ void ModeCommand::executeUserMode(Client *executor, Server &server)
  * Ex: MODE #channel +o user
  * on channel #channel, add operator status to user
  * Current supported modes:
- * +o : operator status
+ * +o : give channel operator privilege
  * +i : invite only
  * +t : topic set by operator only
  * +k : key (password)
@@ -90,12 +85,23 @@ void ModeCommand::executeChannelMode(Client *executor, Server &server)
 		server.reply(executor, ERR_NOSUCHCHANNEL(executor->getNickname(), _params[0]));
 		return;
 	}
+	size_t _paramSize = _params.size();
+	if (_paramSize == 1)
+	{
+		std::vector<std::string> v = channel->getModeAsString(executor);
+		if (v.size() == 0)
+			server.reply(executor, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "", ""));
+		else if (v.size() == 1)
+			server.reply(executor, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], v[0], ""));
+		else if (v.size() > 1)
+			server.reply(executor, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], v[0], v[1]));
+		return;
+	}
 	if (!channel->isClientOPChannel(executor))
 	{
 		server.reply(executor, ERR_CHANOPRIVSNEEDED(executor->getNickname(), _params[0]));
 		return;
 	}
-	size_t _paramSize = _params.size();
 	for (size_t i = 1; i < _paramSize; ++i)
 	{
 		if (_params[i][0] != '+' && _params[i][0] != '-') // invalid mode format
@@ -115,12 +121,12 @@ void ModeCommand::executeChannelMode(Client *executor, Server &server)
 			Client *target = channel->getClientByNickname(_params[i + 1]);
 			if (_params[i][0] == '+')
 			{
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "+o", _params[i + 1]));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "+o", _params[i + 1]));
 				channel->addOperator(target);
 			}
 			else
 			{
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "-o", _params[i + 1]));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "-o", _params[i + 1]));
 				channel->removeOperator(target); // retirer même si c'est le dernier ?? -> channel sans operateur
 			}
 		}
@@ -129,12 +135,12 @@ void ModeCommand::executeChannelMode(Client *executor, Server &server)
 			ChannelModes modes = channel->getModes();
 			if (_params[i][0] == '+')
 			{
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "+i", ""));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "+i", ""));
 				modes.is_invite_only = true;
 			}
 			else
 			{
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "-i", ""));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "-i", ""));
 				modes.is_invite_only = false;
 			}
 			channel->setModes(modes);
@@ -144,12 +150,12 @@ void ModeCommand::executeChannelMode(Client *executor, Server &server)
 			ChannelModes modes = channel->getModes();
 			if (_params[i][0] == '+')
 			{
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "+t", ""));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "+t", ""));
 				modes.is_topic_set_op_only = true;
 			}
 			else
 			{
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "-t", ""));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getHost(), _params[0], "-t", ""));
 				modes.is_topic_set_op_only = false;
 			}
 			channel->setModes(modes);
@@ -161,7 +167,7 @@ void ModeCommand::executeChannelMode(Client *executor, Server &server)
 			ChannelModes modes = channel->getModes();
 			if (_params[i][0] == '+')
 			{
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "+k", _params[i + 1]));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "+k", _params[i + 1]));
 				modes.has_key = true;
 				channel->setKey(_params[i + 1]);
 			}
@@ -169,7 +175,7 @@ void ModeCommand::executeChannelMode(Client *executor, Server &server)
 			{
 				if (channel->isKeySame(_params[i + 1]) == false)
 					continue;
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "-k", "*"));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "-k", "*"));
 				modes.has_key = false;
 				channel->setKey("*");
 			}
@@ -183,7 +189,7 @@ void ModeCommand::executeChannelMode(Client *executor, Server &server)
 			{
 				if (_paramSize <= i + 1) // s'il n'y a pas de limite, on ne peut pas modifier
 					continue;
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "+l", _params[i + 1]));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "+l", _params[i + 1]));
 				modes.is_limited = true;
 				std::istringstream iss(_params[i + 1]);
 				size_t limit;
@@ -193,7 +199,7 @@ void ModeCommand::executeChannelMode(Client *executor, Server &server)
 			}
 			else
 			{
-				server.replyChannel(channel, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "-l", ""));
+				server.broadcastChannel(channel, RPL_CHANNELMODEIS(executor->getNickname(), _params[0], "-l", ""));
 				modes.is_limited = false;
 			}
 			channel->setModes(modes);

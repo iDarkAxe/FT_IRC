@@ -139,7 +139,11 @@ inline std::string RPL_UNIQOPIS(const std::string& nick, const std::string& chan
 inline std::string RPL_CHANNELMODEIS(const std::string& nick, const std::string& channel, const std::string& mode, 
                                      const std::string& params)
 {
-    return ":" + std::string(SERVER_NAME) + " 324 " + safe_nick(nick) + " " + channel + " " + mode + " " + params;
+    if (mode == "")
+        return ":" + std::string(SERVER_NAME) + " 324 " + safe_nick(nick) + " " + channel;
+    if (params != "")
+        return ":" + std::string(SERVER_NAME) + " 324 " + safe_nick(nick) + " " + channel + " " + mode + " " + params;
+    return ":" + std::string(SERVER_NAME) + " 324 " + safe_nick(nick) + " " + channel + " " + mode;
 }
 
 // Topic replies (331-332)

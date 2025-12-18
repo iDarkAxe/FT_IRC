@@ -96,7 +96,7 @@ void JoinCommand::execute(Client *executor, Server &server)
 			else
 			{
 				channel->addClient(executor);
-				server.replyChannel(channel, ":" + executor->getNickname() + " JOIN " + channel_names[i]);
+				server.broadcastChannel(channel, ":" + executor->getNickname() + " JOIN " + channel_names[i]);
 				if (!channel->getTopic().empty())
 					server.reply(executor, RPL_TOPIC(executor->getNickname(), channel_names[i], channel->getTopic()));
 			}
@@ -115,13 +115,13 @@ void JoinCommand::execute(Client *executor, Server &server)
 				continue;
 			}
 			channel->addClient(executor);
-			server.replyChannel(channel, ":" + executor->getNickname() + " JOIN " + channel_names[i]);
+			server.broadcastChannel(channel, ":" + executor->getNickname() + " JOIN " + channel_names[i]);
 			if (!channel->getTopic().empty())
 				server.reply(executor, RPL_TOPIC(executor->getNickname(), channel_names[i], channel->getTopic()));
 			continue;
 		}
 		channel->addClient(executor);
-		server.replyChannel(channel, ":" + executor->getNickname() + " JOIN " + channel_names[i]);
+		server.broadcastChannel(channel, ":" + executor->getNickname() + " JOIN " + channel_names[i]);
 		if (!channel->getTopic().empty())
 			server.reply(executor, RPL_TOPIC(executor->getNickname(), channel_names[i], channel->getTopic()));
 	}
