@@ -1,5 +1,5 @@
 .PHONY : all clean fclean re bonus clean-lib clean-bin clean-obj debug debug-CXX debug-print test doc
-# CXX = c++
+CXX := $(shell command -v c++ 2> /dev/null || command -v clang++ 2> /dev/null)
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 DEPENDANCIES = -MMD -MP
 NO_DIR = --no-print-directory
@@ -11,7 +11,7 @@ CXXFLAGS_DEBUG = -Wall -Wextra -g3 -std=c++98
 CXX_DEBUG = clang++
 CXX_DEBUG_CXXFLAGS = -std=c++98 -g3 -Weverything -Wno-padded -pedantic -O2 -Wwrite-strings -Wconversion -fsanitize=address -fsanitize=leak -Wno-covered-switch-default -Wno-suggest-override -Wno-suggest-destructor-override
 # Uncomment the following line to enable debug messages during compilation
-# DEBUG ?= 1
+DEBUG ?= 1
 #############################################################################################
 #                                                                                           #
 #                                         DIRECTORIES                                       #
