@@ -1,4 +1,5 @@
 #include "Signals.hpp"
+#include <cstdio>
 
 sig_atomic_t g_sig;
 
