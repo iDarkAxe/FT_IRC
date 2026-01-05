@@ -1,5 +1,5 @@
 .PHONY : all clean fclean re bonus clean-lib clean-bin clean-obj debug debug-CXX debug-print test doc
-CXX = c++
+# CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 DEPENDANCIES = -MMD -MP
 NO_DIR = --no-print-directory
@@ -10,6 +10,8 @@ NAME = ircserv
 CXXFLAGS_DEBUG = -Wall -Wextra -g3 -std=c++98
 CXX_DEBUG = clang++
 CXX_DEBUG_CXXFLAGS = -std=c++98 -g3 -Weverything -Wno-padded -pedantic -O2 -Wwrite-strings -Wconversion -fsanitize=address -fsanitize=leak -Wno-covered-switch-default -Wno-suggest-override -Wno-suggest-destructor-override
+# Uncomment the following line to enable debug messages during compilation
+# DEBUG ?= 1
 #############################################################################################
 #                                                                                           #
 #                                         DIRECTORIES                                       #
@@ -119,27 +121,30 @@ INCS = \
 #############################################################################################
 all: 
 	@$(MAKE) $(NAME)
-# 	@$(MAKE) client
 
 # Create $(NAME) executable
 $(NAME): $(OBJS) $(INCS)
-	@if $(CXX) $(CXXFLAGS) $(DEPENDANCIES) -I $(P_INC) -I $(P_INC)$(P_CMDS) -o $(NAME) $(OBJS) $(LIBS); then \
+	$(eval COMPILE_CMD = $(CXX) $(CXXFLAGS) $(DEPENDANCIES) -I $(P_INC) -I $(P_INC)$(P_CMDS) -o $(NAME) $(OBJS) $(LIBS))
+	@if $(COMPILE_CMD); then \
 		echo "$(Green)Creating executable $@$(Color_Off)"; \
+		$(if $(DEBUG), echo "  Command: $(COMPILE_CMD)";) \
 	else \
 		echo "$(Red)Error creating $@$(Color_Off)"; \
+		$(if $(DEBUG), echo "  Failed command: $(COMPILE_CMD)";) \
 	fi
 
 # Custom rule to compilate all .cpp with there path
 $(P_OBJ)%.o: $(P_SRC)%.cpp $(INCS)
 	@mkdir -p $(dir $@)
-	@if $(CXX) $(CXXFLAGS) $(DEPENDANCIES) -I $(P_INC) -I $(P_INC)$(P_CMDS) -c $< -o $@; then \
+	$(eval COMPILE_CMD = $(CXX) $(CXXFLAGS) $(DEPENDANCIES) -I $(P_INC) -I $(P_INC)$(P_CMDS) -c $< -o $@)
+	@if $(COMPILE_CMD); then \
 		echo "$(Cyan)Compiling $<$(Color_Off)"; \
+		$(if $(DEBUG), echo "  Command: $(COMPILE_CMD)";) \
 	else \
 		echo "$(Red)Error creating $@$(Color_Off)"; \
+		$(if $(DEBUG), echo "  Failed command: $(COMPILE_CMD)";) \
 	fi
 
-# client:
-# 	$(CXX) $(CXXFLAGS) src/client.cpp -I inc -o $@
 
 #############################################################################################
 #                                                                                           #
@@ -151,8 +156,6 @@ clean:
 	rm -rfd $(P_OBJ)
 	rm -rfd $(P_DEPS)
 	rm -rf .server_output.log
-# 	rm -rfd $(OBJS)
-# 	rm -rfd $(DEPS)
 
 clean-lib:
 	rm -rfd $(P_LIB)
@@ -166,7 +169,6 @@ clean-obj:
 fclean:
 	@$(MAKE) clean-obj
 	@$(MAKE) clean-bin
-# 	@$(MAKE) clean-lib
 
 re:
 	@$(MAKE) fclean
