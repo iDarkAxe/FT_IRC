@@ -324,6 +324,41 @@ std::string &Server::getPassword()
 	return this->_password;
 }
 
+void Server::print_line_error(int fd, std::string& line, size_t start, size_t len, size_t to_erase)
+{
+	// this->reply(this->clients[fd], "Buffer limit reached, only 512 bytes including \\r\\n allowed");
+	std::stringstream ss;
+	ss << "Message " << len << " bytes long from " << fd << " ignored";
+	Debug::print(INFO, ss.str());
+	line.erase(start, to_erase);
+}
+
+/**
+ * @brief Verify the length of messages in the client's read buffer.
+ * 
+ * @param[in,out] fd file descriptor of the client socket
+ */
+void Server::verify_message_length(int fd)
+{
+	std::string &rbuf = this->clients[fd]->rbuf;
+	size_t start = 0;
+	while (!rbuf.empty())
+	{
+		size_t pos = rbuf.find("\r\n", start);
+		if (pos == std::string::npos)
+		{
+			if (rbuf.size() - start > 512)
+				print_line_error(fd, rbuf, start, rbuf.size() - start, std::string::npos);
+			break;
+		}
+		size_t line_len = pos - start + 2;
+		if (line_len > 512)
+			print_line_error(fd, rbuf, start, line_len, line_len);
+		else
+			start = pos + 2;
+	}
+}
+
 /**
  * @brief Read data from a client file descriptor.
  * This function attempts to read data from the specified client file descriptor.
@@ -337,26 +372,9 @@ int Server::read_client_fd(int fd)
 
 	ssize_t r = recv(fd, buf, sizeof(buf), MSG_DONTWAIT);
 
-	if (r >= 512)
-	{
-		this->reply(this->clients[fd], "Buffer limit reached, only 512 bytes including \\r\\n allowed");
-		std::stringstream ss;
-		ss << "Message " << r << " bytes long from " << fd << " ignored";
-		Debug::print(INFO, ss.str());
-		this->clients[fd]->rbuf.clear();
-		return 0;
-	}
-
 	if (r > 0)
 	{
-		this->clients[fd]->rbuf.append(buf, &buf[r]);
-		// std::stringstream ss;
-		// std::string str(buf, &buf[r]);
-		// buf[r] = '\0';
-		// if (str.rfind("\r\n") != std::string::npos)
-		// 	str.erase(str.size()-2, 2);
-		// ss << "Received " << r << " bytes from fd " << fd << " [" << str << "]";
-		// Debug::print(DEBUG, ss.str());
+		this->clients[fd]->rbuf.append(buf, r);
 		return 1;
 	}
 	else if (r == 0)
@@ -493,6 +511,7 @@ void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
 		if (evs & EPOLLIN)
 		{
 			int result = this->read_client_fd(fd);
+			verify_message_length(fd);
 			if (result == 1)
 				interpret_msg(fd);
 		}
