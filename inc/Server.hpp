@@ -50,6 +50,8 @@ public:
 
 	// I/O
 	int read_client_fd(int fd);
+	void verify_message_length(int fd);
+	void print_line_error(int fd, std::string& line, size_t start, size_t len, size_t to_erase);
 	void enable_epollout(int fd);
 	void disable_epollout(int fd);
 	int make_fd_nonblocking(int fd);
