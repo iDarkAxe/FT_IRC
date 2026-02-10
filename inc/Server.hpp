@@ -14,6 +14,10 @@
 
 const int MAX_EVENTS = 64; // Faire une taille dynamique (au fil de l'eau -> vecteur)
 
+//= Debug options =//
+#define PRINT_CORRECT_COMMANDS 0
+#define PRINT_INCORRECT_COMMANDS 1
+
 //= Intervals in seconds =//
 #define FLUSH_CHANNEL_INTERVAL 5
 #define PING_INTERVAL 5
