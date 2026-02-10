@@ -401,6 +401,27 @@ void Server::is_authentification_complete(int fd)
 }
 
 /**
+ * @brief Print command execution details.
+ *
+ * @param[in,out] line The command line to print.
+ * @param[in,out] fd The file descriptor of the client.
+ * @param[in,out] valid Indicates if the command is valid.
+ */
+void print_command_execution(const std::string &line, int fd, bool valid)
+{
+	if (PRINT_CORRECT_COMMANDS == 0 && PRINT_INCORRECT_COMMANDS == 0)
+		return;
+	std::stringstream ss;
+	ss << "[" << line << "]"
+		<< " from client " << fd
+		<< " received";
+	if (PRINT_CORRECT_COMMANDS && valid)
+		Debug::print(DEBUG, ss.str());
+	else if (PRINT_INCORRECT_COMMANDS && !valid)
+		Debug::print(INFO, ss.str());
+}
+
+/**
  * @brief Interpret and process messages from a client.
  * This function extracts complete messages from the client's read buffer,
  * parses them into commands, and executes the corresponding actions.
@@ -419,19 +440,12 @@ void Server::interpret_msg(int fd)
 		if (line.empty())
 			continue;
 		ACommand *cmd = CommandFactory::findAndCreateCommand(line);
+		print_command_execution(line, fd, cmd != NULL);
 		if (cmd) // valid command found
 		{
 			cmd->execute(this->clients[fd], *this);
 			delete cmd;
 			// this->clients[fd]->printClientInfo();
-		}
-		else
-		{
-			std::stringstream ss;
-			ss << "[" << line << "]"
-			   << " from client " << fd
-			   << " received";
-			Debug::print(INFO, ss.str());
 		}
 		if (this->clients.find(fd) == this->clients.end())
 			return;
