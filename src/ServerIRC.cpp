@@ -15,7 +15,7 @@
  * @return true everything sent properly
  * @return false error occurred
  */
-bool Server::reply(Client *client, std::string message)
+bool Server::reply(Client *client, const std::string& message)
 {
 	if (!client)
 	{
@@ -74,7 +74,7 @@ bool Server::reply(Client *client, std::string message)
  * @return true everything sent properly to all clients
  * @return false error occurred
  */
-bool Server::replyChannel(Channel *channel, Client *sender, std::string message)
+bool Server::replyChannel(Channel *channel, Client *sender, const std::string& message)
 {
 	if (!channel)
 	{
@@ -109,7 +109,7 @@ bool Server::replyChannel(Channel *channel, Client *sender, std::string message)
  * @return true everything sent properly to all clients
  * @return false error occurred
  */
-bool Server::broadcastChannel(Channel *channel, std::string message)
+bool Server::broadcastChannel(Channel *channel, const std::string& message)
 {
 	if (!channel)
 	{
@@ -131,7 +131,7 @@ bool Server::broadcastChannel(Channel *channel, std::string message)
 	return ret;
 }
 
-bool Server::broadcastChannelOnlyOP(Channel *channel, std::string message)
+bool Server::broadcastChannelOnlyOP(Channel *channel, const std::string& message)
 {
 	if (!channel)
 	{

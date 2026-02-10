@@ -407,7 +407,7 @@ void Server::is_authentification_complete(int fd)
  * @param[in,out] fd The file descriptor of the client.
  * @param[in,out] valid Indicates if the command is valid.
  */
-void print_command_execution(const std::string &line, int fd, bool valid)
+static void print_command_execution(const std::string &line, int fd, bool valid)
 {
 	if (PRINT_CORRECT_COMMANDS == 0 && PRINT_INCORRECT_COMMANDS == 0)
 		return;
