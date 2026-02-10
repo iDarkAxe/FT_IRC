@@ -42,12 +42,14 @@ We used as a reference the [RFC 2812](https://datatracker.ietf.org/doc/html/rfc2
 ## <a name="arch-en">🔧 Architecture / Design Patterns ##
 
 ### Pattern Factory ###
-- The `CommandFactory::findAndCreateCommand()` function select the right command and build it for the client that request it.
+
+* The `CommandFactory::findAndCreateCommand()` function select the right command and build it for the client that request it.
 
 #### Benefits ####
-- 👍 **Extensibility**: easy addition of new commands
-- 👍 **Maintainability**: centralized creation logic
-- 👍 **Readability**: explicit construction of complex objects
+
+* **Extensibility**: easy addition of new commands
+* **Maintainability**: centralized creation logic
+* **Readability**: explicit construction of complex objects
 
 ### Graph ###
 
@@ -94,6 +96,7 @@ A Client doesn't have any permission to execute anything, the server does it for
 * QUIT `<quit message>`
 
 ### Bonus ###
+
 * TIME
 * PONG
 
