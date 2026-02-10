@@ -75,10 +75,10 @@ public:
 	void interpret_msg(int fd);
 
 	// Reply
-	bool reply(Client *client, std::string message);
-	bool replyChannel(Channel *channel, Client *sender, std::string message);
-	bool broadcastChannel(Channel *channel, std::string message);
-	bool broadcastChannelOnlyOP(Channel *channel, std::string message);
+	bool reply(Client *client, const std::string& message);
+	bool replyChannel(Channel *channel, Client *sender, const std::string& message);
+	bool broadcastChannel(Channel *channel, const std::string& message);
+	bool broadcastChannelOnlyOP(Channel *channel, const std::string& message);
 };
 
 #endif // SERVER_HPP
