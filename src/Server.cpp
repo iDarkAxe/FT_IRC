@@ -22,7 +22,6 @@ Server::~Server()
 		close(this->_epfd);
 	for (clientsType::iterator it = this->clients.begin(); it != this->clients.end(); ++it)
 	{
-		close(it->first);
 		delete it->second;
 	}
 	for (channelsType::iterator it = this->channels.begin(); it != this->channels.end(); ++it)
@@ -207,7 +206,10 @@ void Server::disable_epollout(int fd)
 int Server::make_fd_nonblocking(int fd)
 {
 	if (fcntl(fd, F_SETFL, O_NONBLOCK) == -1)
+	{
+		perror("make_fd_nonblocking client");
 		return -1;
+	}
 	return 0;
 }
 
@@ -226,7 +228,6 @@ int Server::init_epoll_event(int client_fd)
 	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, client_fd, &cev) < 0)
 	{
 		perror("epoll_ctl add client");
-		close(client_fd);
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
@@ -273,12 +274,14 @@ void Server::new_client()
 		}
 		if (make_fd_nonblocking(client_fd) < 0)
 		{
-			perror("make_fd_nonblocking client");
 			close(client_fd);
 			continue;
 		}
 		if (init_epoll_event(client_fd))
+		{
+			close(client_fd);
 			continue;
+		}
 		char ip_str[INET_ADDRSTRLEN];
 		uint16_t port = ntohs(client_addr.sin_port);
 		inet_ntop(AF_INET, &client_addr.sin_addr, ip_str, sizeof(ip_str));
@@ -306,7 +309,6 @@ void Server::removeClient(int fd)
 {
 	removeClientFromAllChannels(this->clients[fd]);
 	epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
-	close(fd);
 	delete this->clients[fd];
 	this->clients.erase(fd);
 	// this->clients[fd]->printClientInfo();
@@ -374,7 +376,7 @@ int Server::read_client_fd(int fd)
 
 	if (r > 0)
 	{
-		this->clients[fd]->rbuf.append(buf, r);
+		this->clients[fd]->rbuf.append(buf, static_cast<size_t>(r));
 		return 1;
 	}
 	else if (r == 0)

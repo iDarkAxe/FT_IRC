@@ -23,6 +23,7 @@ Client::Client(Client const &other) : _nickname(other._nickname), _username(othe
 
 Client::~Client()
 {
+	secure_close(this->_fd);
 }
 
 void Client::clear()
