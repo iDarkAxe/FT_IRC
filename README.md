@@ -4,6 +4,10 @@
 
 Make your own IRC Server that no one asked for.
 
+*This project has been created as part of the 42 curriculum by oelleaum, ppontet.*
+
+*It has been later modified to add features and fix some bugs so it's NOT the same version from evaluation.*
+
 ## 📋 Table of Contents ##
 
 * [📖 Introduction](#introduction-en)
@@ -18,6 +22,15 @@ Make your own IRC Server that no one asked for.
 ## <a name="requirements-en">⚙️ Requirements ##
 
 The project uses `c++` compiler, with `-std=c++98` as a requirement.
+
+Our `c++` is exactly this version :
+
+```sh
+$> c++ --version
+Ubuntu clang version 12.0.1-19ubuntu3
+Target: x86_64-pc-linux-gnu
+Thread model: posix
+```
 
 If you want to run the tester, you will need at least a recent version of `cargo` (Rust).
 
@@ -37,7 +50,7 @@ This is the first big project after the `C` projects at 42 so we tried to make i
 
 ### References ###
 
-We used as a reference the [RFC 2812](https://datatracker.ietf.org/doc/html/rfc2812) , and some precisions of [RFC 2811](https://datatracker.ietf.org/doc/html/rfc2811). We implemented only the server, we were not required to implement a client neither a server-to-server communication.
+We used as a reference the [RFC 2812](https://datatracker.ietf.org/doc/html/rfc2812) , and some precisions of [RFC 2811](https://datatracker.ietf.org/doc/html/rfc2811). We implemented only the server, we were not required to implement a client neither a server-to-server communication. The project should be compliant with the `RFC 2812`, at least for the implemented commands.
 
 ## <a name="arch-en">🔧 Architecture / Design Patterns ##
 
