@@ -43,7 +43,6 @@ public:
 	Channel(std::string channel_name);
 	~Channel();
 
-	void clear();
 	void setModes(ChannelModes modes);
 	ChannelModes getModes() const;
 	std::vector<std::string> getModeAsString(Client *client);

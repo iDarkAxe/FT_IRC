@@ -8,23 +8,7 @@ Channel::Channel(std::string channel_name) : _channel_name(channel_name), _topic
 	std::memset(&this->_mode, 0, sizeof(ChannelModes));
 }
 
-Channel::~Channel()
-{
-	clear();
-}
-
-void Channel::clear()
-{
-	Debug::print(INFO, "Clearing channel: " + this->_channel_name);
-	this->_topic.clear();
-	this->_key.clear();
-	std::memset(&this->_mode, 0, sizeof(ChannelModes));
-	this->_user_limit = 0;
-	this->_clients.clear();
-	this->_operators.clear();
-	this->_allowed_clients.clear();
-	this->_allowed_operators.clear();
-}
+Channel::~Channel(){}
 
 void Channel::setModes(ChannelModes modes)
 {

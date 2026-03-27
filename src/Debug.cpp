@@ -5,13 +5,9 @@ std::ostream *Debug::stream = &std::cout;
 std::ostream *Debug::errStream = &std::cerr;
 bool Debug::useColors = false;
 
-Debug::Debug()
-{
-}
+Debug::Debug(){}
 
-Debug::~Debug()
-{
-}
+Debug::~Debug(){}
 
 Debug::Debug(const Debug &f)
 {

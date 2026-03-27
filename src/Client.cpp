@@ -3,11 +3,6 @@
 #include <cstring>
 #include <sstream>
 
-Client::Client() : _nickname(""), _username(""), _realname(""), _host(""), _last_seen(0), _password_correct(false), _registered(false), _ip_address(""), _port(0), _fd(-1), rbuf(""), wbuf(""), hasTriggeredEPOLLOUT(false), last_ping(0), timeout(0), connection_time(0)
-{
-	std::memset(&_mode, 0, sizeof(ClientModes));
-}
-
 Client::Client(int fd, const std::string &ip_str, uint16_t port) : _nickname(""), _username(""), _realname(""), _host(""), _last_seen(0), _password_correct(false), _registered(false), _ip_address(ip_str), _port(port), _fd(fd), rbuf(""), wbuf(""), hasTriggeredEPOLLOUT(false), last_ping(0), timeout(0), connection_time(0)
 {
 	std::memset(&_mode, 0, sizeof(ClientModes));
@@ -16,28 +11,9 @@ Client::Client(int fd, const std::string &ip_str, uint16_t port) : _nickname("")
 	timeout = -1;
 }
 
-Client::Client(Client const &other) : _nickname(other._nickname), _username(other._username), _realname(other._realname), _mode(other._mode), _host(other._host), _last_seen(other._last_seen), _password_correct(other._password_correct), _registered(other._registered), _ip_address(other._ip_address), _port(other._port), _fd(other._fd), rbuf(other.rbuf), wbuf(other.wbuf), hasTriggeredEPOLLOUT(other.hasTriggeredEPOLLOUT), last_ping(other.last_ping), timeout(other.timeout), connection_time(other.connection_time)
-{
-	// Copy constructor
-}
-
 Client::~Client()
 {
 	secure_close(this->_fd);
-}
-
-void Client::clear()
-{
-	this->_nickname.clear();
-	this->_username.clear();
-	this->_realname.clear();
-	this->_host.clear();
-	this->rbuf.clear();
-	this->wbuf.clear();
-	memset(&this->_mode, 0, sizeof(ClientModes));
-	this->_last_seen = 0;
-	this->_password_correct = false;
-	this->_registered = false;
 }
 
 void Client::printClientIRCInfo()
