@@ -40,44 +40,37 @@ bool is_terminal(int fd)
 	return S_ISCHR(st.st_mode);
 }
 
-std::string format_time(void)
-{
-	std::time_t now = time(NULL);
-	const int timezone_offset = 3600;
-	now += timezone_offset;
-
-	std::time_t seconds_in_day = now % 86400;
-	int hours = static_cast<int>(seconds_in_day / 3600);
-	int minutes = static_cast<int>((seconds_in_day % 3600) / 60);
-	int seconds = static_cast<int>(seconds_in_day % 60);
-
-	std::ostringstream oss;
-	oss << std::setw(2) << std::setfill('0') << hours << ":"
-		<< std::setw(2) << std::setfill('0') << minutes << ":"
-		<< std::setw(2) << std::setfill('0') << seconds;
-	return oss.str();
-}
-
-// TODO: strftime from ctime could be used instead
 std::string format_date(void)
 {
-    std::time_t now = std::time(NULL);
-    const int timezone_offset = 3600;
-    now += timezone_offset;
-    
-    std::tm* timeinfo = std::gmtime(&now);
-    
-    const char* days[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
-    const char* months[] = {"January", "February", "March", "April", "May", "June", 
-                           "July", "August", "September", "October", "November", "December"};
-    
-    std::ostringstream oss;
-    oss << days[timeinfo->tm_wday] << " " 
-        << months[timeinfo->tm_mon] << " " 
-        << timeinfo->tm_mday << " " 
-        << (timeinfo->tm_year + 1900);
-    
-    return oss.str();
+    const size_t sizeStr = 32;
+	char buffer[sizeStr] = {0};
+	std::time_t time = std::time(NULL);
+
+	if (std::strftime(buffer, sizeStr, "%A %B %d %Y", std::gmtime(&time)) == 0)
+		return "Error on std::strftime";
+	return (buffer);
+}
+
+std::string format_time(void)
+{
+    const size_t sizeStr = 32;
+	char buffer[sizeStr] = {0};
+	std::time_t time = std::time(NULL);
+
+	if (std::strftime(buffer, sizeStr, "%X +00:00", std::gmtime(&time)) == 0)
+		return "Error on std::strftime";
+	return (buffer);
+}
+
+std::string format_date_time(void)
+{
+	const size_t sizeStr = 64;
+	char buffer[sizeStr] = {0};
+	std::time_t time = std::time(NULL);
+
+	if (std::strftime(buffer, sizeStr, "%A %B %d %Y -- %X +00:00", std::gmtime(&time)) == 0)
+		return "Error on std::strftime";
+	return (buffer);
 }
 
 void secure_close(int& fd)
