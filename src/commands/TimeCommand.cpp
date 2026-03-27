@@ -26,7 +26,5 @@ void TimeCommand::execute(Client *executor, Server &server)
 		server.reply(executor, "Time command does not take any parameters");
 		return;
 	}
-	std::stringstream ss;
-	ss << format_date() << " -- " << format_time() << " +00:00";
-	server.reply(executor, RPL_TIME(executor->getNickname(), executor->getNickname(), ss.str()));
+	server.reply(executor, RPL_TIME(executor->getNickname(), executor->getNickname(), format_date_time()));
 }
