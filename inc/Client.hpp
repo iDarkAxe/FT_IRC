@@ -41,21 +41,16 @@ public:
 	std::time_t connection_time; //!< Time when user connected to server
 
 	//= Methods =//
-private:
-	Client();
-	Client(Client const &other);
 public:
 	Client(int fd, const std::string &ip_str, uint16_t port);
 	~Client();
 
-	void clear();
 	void printClientInfo();
 	void printClientIRCInfo();
 	void printClientSocketInfo();
 	void printConnInfo();
 
 	//= Methods for Client =//
-	const std::string &getKey() const;
 	void setNickname(const std::string &nickname);
 	const std::string &getNickname() const;
 	void setUsername(const std::string &username);
