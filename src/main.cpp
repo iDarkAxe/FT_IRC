@@ -28,9 +28,10 @@ int main(int argc, char **argv)
 	}
 }
 	std::string password(argv[2]);
-	Server server(port, password);
+	
 	try 
 	{
+		Server server(port, password);
 		if (server.RunServer() == EXIT_FAILURE)
 			return -1;
 	}

@@ -39,6 +39,8 @@ INC = \
 	Channel.hpp \
 	Server.hpp \
 	Reply.hpp \
+	EventLoop.hpp \
+	EpollLoop.hpp \
 
 INC_CMDS = \
 	ACommand.hpp \
@@ -71,6 +73,8 @@ SRC = \
 	Client.cpp \
 	Channel.cpp \
 	Signals.cpp \
+	EventLoop.cpp \
+	EpollLoop.cpp \
 
 SRC_CMDS = \
 	ACommand.cpp \

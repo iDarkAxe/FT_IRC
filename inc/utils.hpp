@@ -10,6 +10,5 @@ std::string format_time(void);
 std::string format_date(void);
 std::string format_date_time(void);
 void secure_close(int &fd);
-void epoll_ret(void);
 
 #endif // UTILS_HPP

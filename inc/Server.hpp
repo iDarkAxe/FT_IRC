@@ -4,15 +4,21 @@
 #include <map>
 #include <cstdio>
 #include <csignal>
-#include <sys/epoll.h>
 #include <netinet/in.h>
 
 #include "Signals.hpp"
 #include "ACommand.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "EventLoop.hpp"
 
-const int MAX_EVENTS = 64; // Faire une taille dynamique (au fil de l'eau -> vecteur)
+#ifdef __linux__
+	#include "EpollLoop.hpp"
+#elif defined(__APPLE__) || defined(__FreeBSD__)
+	#include "KqueueLoop.hpp"
+#else
+	#error "Unsupported platform"
+#endif
 
 //= Debug options =//
 #define PRINT_CORRECT_COMMANDS 0
@@ -22,7 +28,6 @@ const int MAX_EVENTS = 64; // Faire une taille dynamique (au fil de l'eau -> vec
 #define FLUSH_CHANNEL_INTERVAL 5
 #define PING_INTERVAL 5
 #define PING_TIMEOUT 3
-#define EPOLL_WAIT_TIMEOUT 100 // in milliseconds
 
 class ACommand;
 
@@ -35,8 +40,8 @@ private:
 	std::string _password;								   //!< Password for the server
 	clientsType clients;								   //!< Map of client socket to Client class
 	int _server_socket;									   //!< Server socket file descriptor
-	int _epfd;											   //!< Epoll file descriptor
 	channelsType channels;								   //!< Map of channel name to Channel pointers
+	EventLoop *event_loop;								   //!< Event loop for handling I/O events
 
 public:
 	Server(int port, std::string password);
@@ -44,21 +49,17 @@ public:
 	std::string &getPassword();
 	int RunServer();
 	int init_socket(void);
-	int init_epoll(void);
 	void initClient(int client_fd, const std::string &ip_str, uint16_t port);
-	int init_epoll_event(int client_fd);
-
+	
 	// I/O
+	void handle_events(int n);
 	int read_client_fd(int fd);
 	void verify_message_length(int fd);
 	void print_line_error(int fd, std::string& line, size_t start, size_t len, size_t to_erase);
-	void enable_epollout(int fd);
-	void disable_epollout(int fd);
 	int make_fd_nonblocking(int fd);
 
 	// Clients managing
 	void client_kicked(int fd);
-	void handle_events(int n, epoll_event events[MAX_EVENTS]);
 	void new_client();
 	void removeClient(int fd);
 	void removeClient(Client *client);

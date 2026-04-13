@@ -5,7 +5,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <unistd.h>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netdb.h>
@@ -18,8 +17,8 @@ Server::~Server()
 {
 	if (this->_server_socket != -1)
 		close(this->_server_socket);
-	if (this->_epfd != -1)
-		close(this->_epfd);
+	if (this->event_loop)
+		delete this->event_loop;
 	for (clientsType::iterator it = this->clients.begin(); it != this->clients.end(); ++it)
 	{
 		delete it->second;
@@ -30,10 +29,22 @@ Server::~Server()
 	}
 }
 
-Server::Server(int port, std::string password) : _port(port), _password(password), _server_socket(-1), _epfd(-1)
+Server::Server(int port, std::string password) : _port(port), _password(password), _server_socket(-1),  event_loop(NULL)
 {
 	g_sig = 0;
 	signal_init();
+	if (init_socket() < 0)
+		throw std::runtime_error("Failed to initialize server socket");
+	#ifdef __linux__
+		this->event_loop = new EpollLoop();
+	#elif defined(__APPLE__) || defined(__FreeBSD__)
+		this->event_loop = new KqueueLoop();
+	#else
+		#error "Unsupported platform"
+	#endif
+	// Add server socket to event loop instance
+	if (this->event_loop->add(this->_server_socket, EVENT_TYPE_READ) < 0)
+		throw std::runtime_error("Failed to add server socket to event loop");
 }
 
 /**
@@ -137,67 +148,6 @@ int Server::init_socket(void)
 }
 
 /**
- * @brief Initialize the epoll socket and the main event
- * 
- * @return int file descriptor of the epoll socket on success, 1 on failure
- */
-int Server::init_epoll(void)
-{
-	this->_epfd = epoll_create(MAX_EVENTS);
-	if (this->_epfd < 0)
-	{
-		perror("epoll_create");
-		secure_close(this->_server_socket);
-		return (EXIT_FAILURE);
-	}
-	epoll_event ev;
-	ev.events = EPOLLIN | EPOLLRDHUP; 
-	ev.data.fd = this->_server_socket;
-	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, this->_server_socket, &ev) < 0)
-	{
-		perror("epoll_ctl add server");
-		secure_close(this->_server_socket);
-		secure_close(this->_epfd);
-		return EXIT_FAILURE;
-	}
-
-	return (this->_epfd);
-}
-
-/**
- * @brief Enable EPOLLOUT event for the given file descriptor in epoll instance.
- * This allows the server to be notified when the file descriptor is ready for writing.
- * It is useful to use when the data send to a client couln't be sent in one go
- * and we need to wait for the socket to be writable again.
- *
- * @param[in,out] fd file descriptor of the client socket
- */
-void Server::enable_epollout(int fd)
-{
-	epoll_event ev;
-	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP;
-	ev.data.fd = fd;
-	epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev);
-}
-
-// When we wrote in client fd, we don't want epoll_wait to be triggered to write again,
-// we switch off the flag EPOLLOUT
-/**
- * @brief Disable EPOLLOUT event for the given file descriptor in epoll instance.
- * This prevents the server from being notified when the file descriptor is ready for writing,
- * as it is always ready if there is no data to send.
- *
- * @param[in,out] fd file descriptor of the client socket
- */
-void Server::disable_epollout(int fd)
-{
-	epoll_event ev;
-	ev.events = EPOLLIN | EPOLLRDHUP;
-	ev.data.fd = fd;
-	epoll_ctl(_epfd, EPOLL_CTL_MOD, fd, &ev);
-}
-
-/**
  * @brief Make a file descriptor non-blocking.
  *
  * @param[in,out] fd file descriptor to modify
@@ -211,26 +161,6 @@ int Server::make_fd_nonblocking(int fd)
 		return -1;
 	}
 	return 0;
-}
-
-/**
- * @brief Initialize epoll event for a new client file descriptor.
- *
- * @param[in,out] client_fd file descriptor of the new client socket
- * @return int 0 on success, 1 on failure
- */
-int Server::init_epoll_event(int client_fd)
-{
-	epoll_event cev;
-	std::memset(&cev, 0, sizeof(cev));
-	cev.events = EPOLLIN | EPOLLRDHUP;
-	cev.data.fd = client_fd;
-	if (epoll_ctl(this->_epfd, EPOLL_CTL_ADD, client_fd, &cev) < 0)
-	{
-		perror("epoll_ctl add client");
-		return EXIT_FAILURE;
-	}
-	return EXIT_SUCCESS;
 }
 
 /**
@@ -277,7 +207,8 @@ void Server::new_client()
 			close(client_fd);
 			continue;
 		}
-		if (init_epoll_event(client_fd))
+		
+		if (this->event_loop->add(client_fd, EVENT_TYPE_READ) < 0)
 		{
 			close(client_fd);
 			continue;
@@ -308,7 +239,7 @@ void Server::client_quited(int fd) {
 void Server::removeClient(int fd)
 {
 	removeClientFromAllChannels(this->clients[fd]);
-	epoll_ctl(this->_epfd, EPOLL_CTL_DEL, fd, NULL);
+	this->event_loop->del(fd);
 	delete this->clients[fd];
 	this->clients.erase(fd);
 	// this->clients[fd]->printClientInfo();
@@ -475,79 +406,69 @@ void Server::interpret_msg(int fd)
 }
 
 /**
- * @brief Handle epoll events, dispatching them to the appropriate handlers.
+ * @brief Handle events, dispatching them to the appropriate handlers.
  * If it's a new connection, it calls new_client().
  * If it's an existing client, it checks for READ, WRITE, HUP,
  * and ERR events and handles them accordingly.
  *
- * @param[in] n number of events returned by epoll_wait
- * @param[in] events event array containing the events to handle
+ * @param[in] n number of events returned by event loop wait function
  */
-void Server::handle_events(int n, epoll_event events[MAX_EVENTS])
+void Server::handle_events(int n)
 {
 	for (int i = 0; i < n; ++i)
 	{
-		int fd = events[i].data.fd;
-		uint32_t evs = events[i].events;
+		EventResult event = this->event_loop->getEvent(i);
+		// std::cout << "Event " << n << std::endl;
+		// std::cout << "event.fd: " << event.fd << ", can_read: " << event.can_read << ", can_write: " << event.can_write << ", is_error: " << event.is_error << std::endl;
 
-		if (fd == this->_server_socket)
+		if (event.fd == this->_server_socket)
 		{
 			this->new_client();
 			continue;
 		}
-		// EPOLLHUP: fd closed by client : the socket is dead
-		// EPOLLERR: error condition happened on the associated fd
-		// EPOLLRDHUP:  client closed fd but the socket is still alive
-		if (evs & (EPOLLHUP | EPOLLERR) || evs & EPOLLRDHUP) 
+		
+		if (event.is_error)
 		{
-			this->client_quited(fd);
+			this->client_quited(event.fd);
 			continue;
 		}
-		// EPOLLOUT : We set that flag when we couldn't send all data to client in one try
-		if (evs & EPOLLOUT)
+		// We set that flag when we couldn't send all data to client in one try
+		if (event.can_write)
 		{
-			if (!this->reply(this->clients[fd], ""))
+			if (!this->reply(this->clients[event.fd], ""))
 				continue;
 		}
-		// EPOLLIN : There is data to read in the associated fd
-		if (evs & EPOLLIN)
+		// There is data to read in the associated event.fd
+		if (event.can_read)
 		{
-			int result = this->read_client_fd(fd);
-			verify_message_length(fd);
+			int result = this->read_client_fd(event.fd);
+			verify_message_length(event.fd);
 			if (result == 1)
-				interpret_msg(fd);
+				interpret_msg(event.fd);
 		}
 	}
 }
 
 /**
  * @brief Run the IRC server main loop.
- * Start the server, initialize the socket and epoll instance,
+ * Start the server, initialize the socket and event loop instance,
  * and enter the main event loop to handle client connections and messages.
  *
  * @return int 0 on success (signal interrupt is a normal stop), 1 on failure
  */
 int Server::RunServer()
 {
-	if (init_socket() < 0)
-		return EXIT_FAILURE;
-	if (init_epoll() < 0)
-		return EXIT_FAILURE;
-	epoll_event events[MAX_EVENTS];
 	while (g_sig == 0)
 	{
-		int n = epoll_wait(this->_epfd, events, MAX_EVENTS, EPOLL_WAIT_TIMEOUT);
+		int n = this->event_loop->wait();
 		if (n < 0)
-		{
-			epoll_ret();
 			break;
-		}
-		handle_events(n, events);
+		handle_events(n);
 		deleteUnusedChannels();
 		// check_clients_ping();
 		// remove_inactive_clients();
 	}
+	this->event_loop->del(this->_server_socket);
 	secure_close(this->_server_socket);
-	secure_close(this->_epfd);
 	return EXIT_SUCCESS;
 }

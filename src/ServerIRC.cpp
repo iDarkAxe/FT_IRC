@@ -8,7 +8,7 @@
 /**
  * @brief Send a message to a client by the server
  * If the message can't be sent in one try,
- * it will enable EPOLLOUT for the client's fd, and try to send the rest later
+ * it will try to send the rest later
  *
  * @param[in,out] client client to send the message to
  * @param[in] message message to send
@@ -23,7 +23,7 @@ bool Server::reply(Client *client, const std::string& message)
 		return false;
 	}
 	if (client->hasTriggeredEPOLLOUT)
-		disable_epollout(client->_fd);
+		this->event_loop->modify(client->_fd, EVENT_TYPE_READ);
 	std::string &wbuf = client->wbuf;
 	if (!message.empty())
 		wbuf.append(message).append("\r\n");
@@ -43,7 +43,7 @@ bool Server::reply(Client *client, const std::string& message)
 			if (error == EAGAIN || error == EWOULDBLOCK)
 			{
 				Debug::print(INFO, "The message couldn't be send in one try, retrying next time");
-				enable_epollout(client->_fd);
+				this->event_loop->modify(client->_fd, EVENT_TYPE_READ | EVENT_TYPE_WRITE);
 				return 0;
 			}
 			else if (error == EPIPE)

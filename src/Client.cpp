@@ -6,7 +6,7 @@
 Client::Client(int fd, const std::string &ip_str, uint16_t port) : _nickname(""), _username(""), _realname(""), _host(""), _last_seen(0), _password_correct(false), _registered(false), _ip_address(ip_str), _port(port), _fd(fd), rbuf(""), wbuf(""), hasTriggeredEPOLLOUT(false), last_ping(0), timeout(0), connection_time(0)
 {
 	std::memset(&_mode, 0, sizeof(ClientModes));
-	last_ping = std::time(NULL); // we want to kick incactives clients, so we store the time of the last ping received
+	last_ping = std::time(NULL); // we want to kick inactives clients, so we store the time of the last ping received
 	connection_time = last_ping;
 	timeout = -1;
 }

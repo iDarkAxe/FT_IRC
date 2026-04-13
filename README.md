@@ -52,6 +52,9 @@ This is the first big project after the `C` projects at 42 so we tried to make i
 
 We used as a reference the [RFC 2812](https://datatracker.ietf.org/doc/html/rfc2812) , and some precisions of [RFC 2811](https://datatracker.ietf.org/doc/html/rfc2811). We implemented only the server, we were not required to implement a client neither a server-to-server communication. The project should be compliant with the `RFC 2812`, at least for the implemented commands.
 
+We used this website to start porting to BSD ([kqueue vs epoll](https://pcnews.ru/blogs/kernel_queue_the_complete_guide_on_the_most_essential_technology_for_high_performance_io-1143360.html)). As `epoll` doesn't exist on BSD, we use `kqueue` instead.
+
+
 ## <a name="arch-en">🔧 Architecture / Design Patterns ##
 
 ### Pattern Factory ###

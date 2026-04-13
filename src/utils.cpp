@@ -80,13 +80,3 @@ void secure_close(int& fd)
 	close(fd);
 	fd = -1;
 }
-
-void epoll_ret(void)
-{
-	if (errno == EINTR) 
-	{
-		Debug::print(INFO, "epoll_wait interrupted by signal, closing...");
-		return;
-	}
-	perror("epoll_wait");
-}
