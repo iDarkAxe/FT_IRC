@@ -1,3 +1,5 @@
+#if defined(__linux__)
+
 #include "EpollLoop.hpp"
 #include "utils.hpp"
 #include <sys/epoll.h>
@@ -90,3 +92,5 @@ EventResult EpollLoop::getEvent(int index) const
 
     return res;
 }
+
+#endif // __linux__

@@ -8,6 +8,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <netdb.h>
+#include <sys/socket.h> // needed on freebsd for socket()
 
 #include "Server.hpp"
 #include "ACommand.hpp"

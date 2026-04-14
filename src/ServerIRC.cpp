@@ -1,5 +1,6 @@
 #include <cerrno>
 #include <sstream>
+#include <sys/socket.h> // needed on freebsd for send()
 #include "Server.hpp"
 #include "ACommand.hpp"
 #include "CommandFactory.hpp"

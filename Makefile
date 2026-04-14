@@ -75,6 +75,7 @@ SRC = \
 	Signals.cpp \
 	EventLoop.cpp \
 	EpollLoop.cpp \
+	KqueueLoop.cpp \
 
 SRC_CMDS = \
 	ACommand.cpp \
