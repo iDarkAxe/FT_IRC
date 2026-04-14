@@ -1,5 +1,5 @@
-#ifndef EVENTLOOP_HPP
-#define EVENTLOOP_HPP
+#ifndef EVENTHANDLER_HPP
+#define EVENTHANDLER_HPP
 
 struct EventResult {
 	int fd;
@@ -19,12 +19,12 @@ EventType operator&(EventType a, EventType b);
 
 #define EVENT_WAIT_TIMEOUT 100 // in milliseconds
 
-class EventLoop {
+class EventHandler {
 protected:
 	int event_socket; //!< File descriptor of the event loop
 
 public:
-	virtual ~EventLoop();
+	virtual ~EventHandler();
 
 	virtual int add(int fd, enum EventType type) = 0;
 	virtual int modify(int fd, enum EventType type) = 0;
@@ -34,4 +34,4 @@ public:
 	virtual EventResult getEvent(int index) const = 0;
 };
 
-#endif // EVENTLOOP_HPP
+#endif // EVENTHANDLER_HPP

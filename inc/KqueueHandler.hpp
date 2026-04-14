@@ -3,18 +3,18 @@
 
 #if defined(__APPLE__) || defined(__FreeBSD__)
 
-#include "EventLoop.hpp"
+#include "EventHandler.hpp"
 #include <vector>
 
 const int MAX_EVENTS = 64;
 
-class KqueueLoop : public EventLoop {
+class KqueueHandler : public EventHandler {
 private:
 	std::vector<struct kevent> events; // vector to store events
 
 public:
-	KqueueLoop();
-	~KqueueLoop();
+	KqueueHandler();
+	~KqueueHandler();
 
 	int add(int fd, enum EventType type);
 	int modify(int fd, enum EventType type);

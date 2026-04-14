@@ -1,13 +1,13 @@
 #if defined(__linux__)
 
-#include "EpollLoop.hpp"
+#include "EpollHandler.hpp"
 #include "utils.hpp"
 #include <sys/epoll.h>
 #include <cstdio>
 #include <stdexcept>
 #include <cstdlib>
 
-EpollLoop::EpollLoop()
+EpollHandler::EpollHandler()
 {
 	this->event_socket = epoll_create(MAX_EVENTS);
 	if (this->event_socket < 0)
@@ -18,12 +18,12 @@ EpollLoop::EpollLoop()
 	this->events.resize(MAX_EVENTS);
 }
 
-EpollLoop::~EpollLoop()
+EpollHandler::~EpollHandler()
 {
 	secure_close(this->event_socket);
 }
 
-int EpollLoop::add(int fd, enum EventType type)
+int EpollHandler::add(int fd, enum EventType type)
 {
 	epoll_event ev;
 	ev.events = 0;
@@ -41,7 +41,7 @@ int EpollLoop::add(int fd, enum EventType type)
 	return EXIT_SUCCESS;
 }
 
-int EpollLoop::modify(int fd, enum EventType type)
+int EpollHandler::modify(int fd, enum EventType type)
 {
 	epoll_event ev;
 	ev.events = 0;
@@ -58,7 +58,7 @@ int EpollLoop::modify(int fd, enum EventType type)
 	}
 	return EXIT_SUCCESS;
 }
-int EpollLoop::del(int fd)
+int EpollHandler::del(int fd)
 {
 	if (epoll_ctl(this->event_socket, EPOLL_CTL_DEL, fd, NULL) < 0)
 	{
@@ -67,7 +67,7 @@ int EpollLoop::del(int fd)
 	}
 	return EXIT_SUCCESS;
 }
-int EpollLoop::wait()
+int EpollHandler::wait()
 {
 	int n = epoll_wait(this->event_socket, this->events.data(), static_cast<int>(this->events.size()), EVENT_WAIT_TIMEOUT);
 	if (n < 0)
@@ -77,7 +77,7 @@ int EpollLoop::wait()
 	}
 	return n;
 }
-EventResult EpollLoop::getEvent(int index) const
+EventResult EpollHandler::getEvent(int index) const
 {
 	if (index < 0)
 		throw std::out_of_range("Event index out of range");

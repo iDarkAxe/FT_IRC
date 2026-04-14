@@ -37,9 +37,9 @@ Server::Server(int port, std::string password) : _port(port), _password(password
 	if (init_socket() < 0)
 		throw std::runtime_error("Failed to initialize server socket");
 	#ifdef __linux__
-		this->event_loop = new EpollLoop();
+		this->event_loop = new EpollHandler();
 	#elif defined(__APPLE__) || defined(__FreeBSD__)
-		this->event_loop = new KqueueLoop();
+		this->event_loop = new KqueueHandler();
 	#else
 		#error "Unsupported platform"
 	#endif

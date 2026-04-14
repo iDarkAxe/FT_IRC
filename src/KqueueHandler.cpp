@@ -1,13 +1,13 @@
 #if defined(__APPLE__) || defined(__FreeBSD__)
 
-#include "KqueueLoop.hpp"
+#include "KqueueHandler.hpp"
 #include "utils.hpp"
 #include <sys/event.h>
 #include <cstdio>
 #include <stdexcept>
 #include <cstdlib>
 
-KqueueLoop::KqueueLoop()
+KqueueHandler::KqueueHandler()
 {
 	this->event_socket = kqueue();
 	if (this->event_socket < 0)
@@ -18,12 +18,12 @@ KqueueLoop::KqueueLoop()
 	this->events.resize(MAX_EVENTS);
 }
 
-KqueueLoop::~KqueueLoop()
+KqueueHandler::~KqueueHandler()
 {
 	secure_close(this->event_socket);
 }
 
-int KqueueLoop::add(int fd, enum EventType type)
+int KqueueHandler::add(int fd, enum EventType type)
 {
     struct kevent changes[2];
     int n = 0;
@@ -41,7 +41,7 @@ int KqueueLoop::add(int fd, enum EventType type)
     return EXIT_SUCCESS;
 }
 
-int KqueueLoop::modify(int fd, enum EventType type)
+int KqueueHandler::modify(int fd, enum EventType type)
 {
     struct kevent changes[2];
     int n = 0;
@@ -58,7 +58,7 @@ int KqueueLoop::modify(int fd, enum EventType type)
     }
     return EXIT_SUCCESS;
 }
-int KqueueLoop::del(int fd)
+int KqueueHandler::del(int fd)
 {
 	struct kevent changes[2];
 
@@ -68,7 +68,7 @@ int KqueueLoop::del(int fd)
 
     return kevent(this->event_socket, changes, 2, NULL, 0, NULL);;
 }
-int KqueueLoop::wait()
+int KqueueHandler::wait()
 {
 	struct timespec timeout;
     timeout.tv_sec  = EVENT_WAIT_TIMEOUT / 1000;
@@ -85,7 +85,7 @@ int KqueueLoop::wait()
     }
     return n;
 }
-EventResult KqueueLoop::getEvent(int index) const
+EventResult KqueueHandler::getEvent(int index) const
 {
 	if (index < 0)
 		throw std::out_of_range("Event index out of range");

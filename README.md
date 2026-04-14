@@ -73,12 +73,15 @@ We used this website to start porting to BSD ([kqueue vs epoll](https://pcnews.r
 
 ### Classes ###
 
-We used 5 classes :
+We used 8 classes :
 
 * `Server` : handles the server operations, manage everything
 * `Client` : stores informations of a client/user
 * `Channel` : stores informations of a channel
 * `ACommand` : an abstract class to show the minimum to implement to create new commands
+* `EventHandler` : an abstract class to handle events.
+  * `EpollHandler` : an implementation of event handling with `epoll`
+  * `KqueueHandler` : an implementation of event handling with `kqueue` and `kevent`
 * `Debug` : Debug printing to make correctly formatted logging
 
 A Client doesn't have any permission to execute anything, the server does it for him. A Channel has it's own permissions to work on his own member variables. A Command is a regroupment of server, client and channel operations. The server acts as the orchestrator of its group of users and channels.

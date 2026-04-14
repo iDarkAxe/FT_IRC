@@ -1,20 +1,20 @@
-#ifndef EPOLLLOOP_HPP
-#define EPOLLLOOP_HPP
+#ifndef EPOLLHANDLER_HPP
+#define EPOLLHANDLER_HPP
 
 #if defined(__linux__)
 
-#include "EventLoop.hpp"
+#include "EventHandler.hpp"
 #include <vector>
 
 const int MAX_EVENTS = 64;
 
-class EpollLoop : public EventLoop {
+class EpollHandler : public EventHandler {
 private:
 	std::vector<struct epoll_event> events; // vector to store events
 
 public:
-	EpollLoop();
-	~EpollLoop();
+	EpollHandler();
+	~EpollHandler();
 
 	int add(int fd, enum EventType type);
 	int modify(int fd, enum EventType type);
@@ -26,4 +26,4 @@ public:
 
 #endif // __linux__
 
-#endif // EPOLLLOOP_HPP
+#endif // EPOLLHANDLER_HPP

@@ -10,12 +10,12 @@
 #include "ACommand.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
-#include "EventLoop.hpp"
+#include "EventHandler.hpp"
 
 #ifdef __linux__
-	#include "EpollLoop.hpp"
+	#include "EpollHandler.hpp"
 #elif defined(__APPLE__) || defined(__FreeBSD__)
-	#include "KqueueLoop.hpp"
+	#include "KqueueHandler.hpp"
 #else
 	#error "Unsupported platform"
 #endif
@@ -41,7 +41,7 @@ private:
 	clientsType clients;								   //!< Map of client socket to Client class
 	int _server_socket;									   //!< Server socket file descriptor
 	channelsType channels;								   //!< Map of channel name to Channel pointers
-	EventLoop *event_loop;								   //!< Event loop for handling I/O events
+	EventHandler *event_loop;								   //!< Event loop for handling I/O events
 
 public:
 	Server(int port, std::string password);
