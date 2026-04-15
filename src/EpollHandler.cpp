@@ -85,12 +85,12 @@ EventResult EpollHandler::getEvent(int index) const
 	const struct epoll_event& ev = this->events.at(static_cast<size_t>(index));
 	EventResult res; // Initialisation par défaut
 
-    res.fd = ev.data.fd;
-    res.can_read = (ev.events & EPOLLIN) != 0;
-    res.can_write = (ev.events & EPOLLOUT) != 0;
-    res.is_error = (ev.events & (EPOLLRDHUP | EPOLLERR | EPOLLHUP)) != 0;
+	res.fd = ev.data.fd;
+	res.can_read = (ev.events & EPOLLIN) != 0;
+	res.can_write = (ev.events & EPOLLOUT) != 0;
+	res.is_error = (ev.events & (EPOLLRDHUP | EPOLLERR | EPOLLHUP)) != 0;
 
-    return res;
+	return res;
 }
 
 #endif // __linux__
